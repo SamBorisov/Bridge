@@ -4,33 +4,36 @@ pragma solidity ^0.8.0;
 
 interface IBridge {
 
-        // @notice An event emitted once a Lock transaction is executed
-    event Lock(uint8 targetChain, address token, bytes receiver, uint256 amount, uint256 serviceFee);
 
-        // @notice An event emitted once an Unlock transaction is executed
-    event Unlock(address token, uint256 amount, address receiver);
+    event Lock(uint8 targetChain, address token, uint256 amount, bytes receiver);
 
-        // @notice An even emitted once a Mint transaction is executed
+       
+    event Unlock(bytes _transactionId, address token, uint256 amount, address receiver);
+
+     
     event Mint(address token, uint256 amount, address receiver);
 
-        // @notice An event emitted once a Burn transaction is executed
-    event Burn(address token, uint256 amount, bytes receiver);
+     
+    event Burn(uint8 _nativeChain,bytes _nativeToken, bytes _transactionId, address token, uint256 amount, bytes receiver);
 
-        // @notice An event emitted once a new wrapped token is deployed by the contract
+  
     event WrappedTokenDeployed(uint8 sourceChain, bytes nativeToken, address wrappedToken);
 
 
 
-
-    function lock(uint8 _targetChain, address _nativeToken, uint256 _amount, bytes memory _receiver) external;
+    function lock(
+        uint8 _targetChain, 
+        address _nativeToken, 
+        uint256 _amount, 
+        bytes memory _receiver
+        ) external;
 
     function unlock(
         uint8 _sourceChain,
         bytes memory _transactionId,
         address _nativeToken,
         uint256 _amount,
-        address _receiver,
-        bytes[] calldata _signatures
+        address _receiver
     ) external;
 
     function mint(
@@ -38,13 +41,23 @@ interface IBridge {
         bytes memory _nativeToken,
         bytes memory _transactionId,
         uint256 _amount,
-        address _receiver,
-        bytes[] calldata _signatures
-       // WrappedTokenParams memory _tokenParams
+        address _receiver
     ) external;
 
 
-    function burn(address _wrappedToken, uint256 _amount, bytes memory _receiver) external;
+    function burn(
+        address _wrappedToken, 
+        uint256 _amount, 
+        bytes memory _receiver
+        ) external;
 
+    function wrappedTokens() external view returns (
+        string memory name, 
+        string memory symbol, 
+        uint8 decimals, 
+        address wrappedToken, 
+        address token,
+        uint16 sourceChain
+        );
  
 }

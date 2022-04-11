@@ -5,50 +5,53 @@ pragma solidity ^0.8.0;
 interface IBridge {
 
 
-    event Lock(uint8 targetChain, address token, uint256 amount, bytes receiver);
+    event Lock(uint8 targetChain, address token, uint256 amount, address receiver);
 
        
-    event Unlock(bytes _transactionId, address token, uint256 amount, address receiver);
+    event Unlock(uint8 sourceChain, address token, uint256 amount, address receiver);
 
      
     event Mint(address token, uint256 amount, address receiver);
 
      
-    event Burn(uint8 _nativeChain,bytes _nativeToken, bytes _transactionId, address token, uint256 amount, bytes receiver);
+    event Burn(address token, uint256 amount, address receiver);
 
-  
-    event WrappedTokenDeployed(uint8 sourceChain, bytes nativeToken, address wrappedToken);
+
+    event WrappedTokenDeployed(uint8 sourceChain, address token, address wrappedToken);
 
 
 
     function lock(
-        uint8 _targetChain, 
-        address _nativeToken, 
-        uint256 _amount, 
-        bytes memory _receiver
-        ) external;
+        uint8 targetChain, 
+        address token, 
+        uint256 amount, 
+        address  receiver
+        ) external payable;
 
     function unlock(
-        uint8 _sourceChain,
-        bytes memory _transactionId,
-        address _nativeToken,
-        uint256 _amount,
-        address _receiver
+        uint8 sourceChain,
+        address token,
+        uint256 amount,
+        address receiver,
+        bytes memory txHash,
+        bytes memory txSigned
     ) external;
 
     function mint(
-        uint8 _nativeChain,
-        bytes memory _nativeToken,
-        bytes memory _transactionId,
-        uint256 _amount,
-        address _receiver
+        uint8 sourceChain,
+        address token,
+        uint256 amount,
+        address receiver,
+        bytes memory txHash,
+        bytes memory txSigned
     ) external;
 
 
     function burn(
-        address _wrappedToken, 
-        uint256 _amount, 
-        bytes memory _receiver
+        uint8 sourceChain,
+        address wrappedToken, 
+        uint256 amount, 
+        address receiver
         ) external;
 
     function wrappedTokens() external view returns (
@@ -57,7 +60,8 @@ interface IBridge {
         uint8 decimals, 
         address wrappedToken, 
         address token,
-        uint16 sourceChain
+        uint8 sourceChain
         );
+
  
 }

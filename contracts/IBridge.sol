@@ -17,7 +17,7 @@ interface IBridge {
     event Burn(address token, uint256 amount, address receiver);
 
 
-    event WrappedTokenDeployed(uint8 sourceChain, address token, address wrappedToken);
+    event WrappedToken(uint8 sourceChain, address token, address wrappedToken);
 
 
 

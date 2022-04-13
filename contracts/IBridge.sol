@@ -11,13 +11,13 @@ interface IBridge {
     event Unlock(uint8 sourceChain, address token, uint256 amount, address receiver);
 
      
-    event Mint(address token, uint256 amount, address receiver);
+    event Mint(uint8 sourceChain, uint256 amount, address receiver);
 
      
-    event Burn(address token, uint256 amount, address receiver);
+    event Burn(uint8 sourceChain, uint256 amount, address receiver);
 
 
-    event WrappedToken(uint8 sourceChain, address token, address wrappedToken);
+   // event WrappedToken(uint8 sourceChain, address token, address wrappedToken);
 
 
 
@@ -32,18 +32,14 @@ interface IBridge {
         uint8 sourceChain,
         address token,
         uint256 amount,
-        address receiver,
-        bytes memory txHash,
-        bytes memory txSigned
+        address receiver
     ) external;
 
     function mint(
         uint8 sourceChain,
         address token,
         uint256 amount,
-        address receiver,
-        bytes memory txHash,
-        bytes memory txSigned
+        address receiver
     ) external;
 
 

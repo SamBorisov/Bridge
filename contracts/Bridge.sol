@@ -8,11 +8,11 @@ import "./IBridge.sol";
 
 contract Bridge is IBridge{
 
-     mapping(address => address) private WrappedToken;
+      mapping(address => address) private WrappedToken;
 
 
 
-    function lock(uint8 targetChain, address token, uint256 amount, address receiver) external payable {
+    function lock(uint8 targetChain, address token, uint256 amount, address receiver) external payable override {
         require(amount > 0,"Cannot Lock 0 tokens");
         IERC20(token).transferFrom(msg.sender, address(this), amount);
 
@@ -21,29 +21,29 @@ contract Bridge is IBridge{
     }
 
 
-    function unlock(uint8 sourceChain, address token, uint256 amount, address receiver, bytes memory txHash, bytes memory txSigned) external {
+    function unlock(uint8 sourceChain, address token, uint256 amount, address receiver) external override {
         require(amount > 0,"Cannot Unlock 0 tokens");
         IERC20(token).transfer(msg.sender, amount);
 
-        emit Unlock(targetChain, address(token), amount, msg.sender);
+        emit Unlock(sourceChain, address(token), amount, msg.sender);
 
     }
 
 
-    function mint(uint8 sourceChain, address token, uint256 amount, address receiver, bytes memory txHash, bytes memory txSigned) external {
+    function mint(uint8 sourceChain, address token, uint256 amount, address receiver) external override {
         require(amount > 0,"Cannot Mint 0 tokens");
-        IERC20(token).mint(receiver, amount);
+ //       IERC20(token).mint(receiver, amount);
 
-        emit Minted(targetChain, amount, msg.sender);
+        emit Mint(sourceChain, amount, msg.sender);
 
     }
 
 
-    function burn(uint8 sourceChain, address wrappedToken, uint256 amount, address receiver) external { 
-        require(amonth > 0,"Cannot Burn 0 tokens");
-        IERC20(token).burn(receiver, amount);
+    function burn(uint8 sourceChain, address wrappedToken, uint256 amount, address receiver) external override { 
+        require(amount > 0,"Cannot Burn 0 tokens");
+//        IERC20(token).burn(receiver, amount);
 
-        emit Burned(targetChain, amount, msg.sender);
+        emit Burn(sourceChain, amount, msg.sender);
 
 
     }
@@ -59,15 +59,14 @@ contract Bridge is IBridge{
     }
 
 
-    function wrappedTokens() external view returns (string memory name, string memory symbol, uint8 decimals, address wrappedToken, address token, uint8 sourceChain) {
+    function wrappedTokens() external view override returns (string memory name, string memory symbol, uint8 decimals, address wrappedToken, address token, uint8 sourceChain) {
 
 
 
 
 
 
+    }  
 
-
-    }   
-    
+ 
 }

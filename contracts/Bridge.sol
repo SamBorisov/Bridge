@@ -8,8 +8,25 @@ import "./IBridge.sol";
 
 contract Bridge is IBridge{
 
+    event Lock(uint8 targetChain, address token, uint256 amount, address receiver);
+
+       
+    event Unlock(uint8 sourceChain, address token, uint256 amount, address receiver);
+
+     
+    event Mint(uint8 sourceChain, uint256 amount, address receiver);
+
+     
+    event Burn(uint8 sourceChain, uint256 amount, address receiver);
+
+
       mapping(address => address) private WrappedToken;
 
+      address bridge;
+
+    constructor (address _bridge){
+        bridge = _bridge;
+    }
 
 
     function lock(uint8 targetChain, address token, uint256 amount, address receiver) external payable override {
@@ -49,24 +66,13 @@ contract Bridge is IBridge{
     }
 
 
-    function wrapToken(uint16 sourceChain, address token, string memory name, string memory symbol) internal returns (address) {
-        require(WrappedToken[token] == address(0), "This token is already wrapped");
-        require(bytes(name).length != 0, "Name should be longer");
-        require(bytes(symbol).length != 0, "Symbol should be longer");
-        require(sourceChain > 0, "Invalid chain id");
+    
+
+    modifier onlyBridge() {
+        require(bridge == msg.sender, "only the bridge can trigger this function");
+    } 
 
 
-    }
-
-
-    function wrappedTokens() external view override returns (string memory name, string memory symbol, uint8 decimals, address wrappedToken, address token, uint8 sourceChain) {
-
-
-
-
-
-
-    }  
-
+    
  
 }

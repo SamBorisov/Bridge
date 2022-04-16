@@ -19,12 +19,12 @@ contract Bridge {
     event Burn(uint8 sourceChain, uint256 amount, address receiver);
 
 
-      mapping(address => address) private WrappedToken;
-
       address bridge;
 
       uint8 _targetChain;
       uint8 _sourceChain;
+
+
 
     constructor (address _bridge){
         bridge = _bridge;
@@ -66,6 +66,7 @@ contract Bridge {
 
 
     }
+        
 
 
     

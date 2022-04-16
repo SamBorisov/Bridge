@@ -1,4 +1,10 @@
+const { task } = require("hardhat/config");
+
 require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-etherscan");
+require("@nomiclabs/hardhat-ganache");
+require("solidity-coverage");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -10,6 +16,14 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+task("deploy-TT-testnet", "Deploys contract on a provided network")
+    .setAction(async (taskArguments, hre, runSuper) => {
+        const deployTestToken = require("./scripts/deploy-TT");
+        await deployTestToken(taskArguments);
+   
+    });
+
+   
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 

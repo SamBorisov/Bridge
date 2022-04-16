@@ -4,9 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
 
-import "./IBridge.sol";
 
-contract Bridge is IBridge{
+contract Bridge {
 
     event Lock(uint8 targetChain, address token, uint256 amount, address receiver);
 
@@ -23,6 +22,9 @@ contract Bridge is IBridge{
       mapping(address => address) private WrappedToken;
 
       address bridge;
+
+      uint8 _targetChain;
+      uint8 _sourceChain;
 
     constructor (address _bridge){
         bridge = _bridge;
@@ -70,6 +72,7 @@ contract Bridge is IBridge{
 
     modifier onlyBridge() {
         require(bridge == msg.sender, "only the bridge can trigger this function");
+        _;
     } 
 
 

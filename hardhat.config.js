@@ -28,10 +28,10 @@ module.exports = {
       url: "https://ropsten.infura.io/v3/40c2813049e44ec79cb4d7e0d18de173",
       accounts: ['0x216b6e8e5512846deddebeec8bc7eb3a36a8d6cf502c6c9a4722bc2644228f89']
     },
-    rinkeby: {
-      url: "",
-      accounts: ['']
-    }
+    // rinkeby: {
+    //   url: "",
+    //   accounts: ['']
+    // }
   },
 
 };

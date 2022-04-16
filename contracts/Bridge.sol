@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 
 contract Bridge {
@@ -31,7 +31,7 @@ contract Bridge {
     }
 
 
-    function lock(uint8 targetChain, address token, uint256 amount, address receiver) external payable override {
+    function lock(uint8 targetChain, address token, uint256 amount, address receiver) external {
         require(amount > 0,"Cannot Lock 0 tokens");
         IERC20(token).transferFrom(msg.sender, address(this), amount);
 
@@ -40,7 +40,7 @@ contract Bridge {
     }
 
 
-    function unlock(uint8 sourceChain, address token, uint256 amount, address receiver) external override {
+    function unlock(uint8 sourceChain, address token, uint256 amount, address receiver) external onlyBridge {
         require(amount > 0,"Cannot Unlock 0 tokens");
         IERC20(token).transfer(msg.sender, amount);
 
@@ -49,7 +49,7 @@ contract Bridge {
     }
 
 
-    function mint(uint8 sourceChain, address token, uint256 amount, address receiver) external override {
+    function mint(uint8 sourceChain, address token, uint256 amount, address receiver) external onlyBridge {
         require(amount > 0,"Cannot Mint 0 tokens");
  //       IERC20(token).mint(receiver, amount);
 
@@ -58,9 +58,9 @@ contract Bridge {
     }
 
 
-    function burn(uint8 sourceChain, address wrappedToken, uint256 amount, address receiver) external override { 
+    function burn(uint8 sourceChain, address wrappedToken, uint256 amount, address receiver) external { 
         require(amount > 0,"Cannot Burn 0 tokens");
-//        IERC20(token).burn(receiver, amount);
+//        IERC20(token).burn(amount);
 
         emit Burn(sourceChain, amount, msg.sender);
 

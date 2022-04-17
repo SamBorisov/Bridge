@@ -40,7 +40,7 @@ contract Bridge is Wrap {
     }
 
 
-    function unlock(uint8 sourceChain, address token, uint256 amount, address receiver) external onlyBridge {
+    function unlock(uint8 sourceChain, address token, uint256 amount, address receiver) external {
         require(amount > 0,"Cannot Unlock 0 tokens");
         require(receiver == msg.sender,"Receiver should be the sender");
         IERC20(token).transfer(msg.sender, amount);
@@ -50,7 +50,7 @@ contract Bridge is Wrap {
     }
 
 
-    function mint(uint8 sourceChain, address token, uint256 amount, address receiver, string memory TokenName, string memory TokenSymbol) external onlyBridge {
+    function mint(uint8 sourceChain, address token, uint256 amount, address receiver, string memory TokenName, string memory TokenSymbol) external {
         require(amount > 0,"Cannot Mint 0 tokens");
         require(receiver == msg.sender,"Receiver should be the sender");
 

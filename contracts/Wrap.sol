@@ -11,8 +11,8 @@ contract Wrap {
     event WrappedTokenDeployed(uint16 sourceChain,address token,address wrappedToken);
       
     
-        mapping(address => address) private orignalToWrap;
-        mapping(address => WrappedToken) private wrappedDetails;
+        mapping(address => address) internal orignalToWrap;
+        mapping(address => WrappedToken) internal wrappedDetails;
 
 
         struct WrappedToken {
@@ -21,12 +21,12 @@ contract Wrap {
         uint8 decimals;
         address wrappedToken;
         address token;
-        uint16 sourceChain;
+        uint8 sourceChain;
         }
 
-        WrappedToken[] private _WrappedTokens;
+        WrappedToken[] internal _WrappedTokens;
 
-        function wrapToken (uint16 sourceChain, address token, string memory name, string memory symbol) internal returns (address) {
+        function wrapToken (uint8 sourceChain, address token, string memory name, string memory symbol) internal returns (address) {
         require(orignalToWrap[token] == address(0), "Token already wrapped");
         require(bytes(name).length != 0, "Put longer name");
         require(bytes(symbol).length != 0, "Put longer symbol");

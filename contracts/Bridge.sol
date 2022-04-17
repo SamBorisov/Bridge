@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 import "./Wrap.sol";
 
@@ -33,7 +31,7 @@ contract Bridge is Wrap {
     }
 
 
-    function lock(uint8 targetChain, address token, uint256 amount, address receiver) external {
+    function lock(uint8 targetChain, address token, uint256 amount) external {
         require(amount > 0,"Cannot Lock 0 tokens");
         IERC20(token).transferFrom(msg.sender, address(this), amount);
 

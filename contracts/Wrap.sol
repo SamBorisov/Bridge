@@ -27,10 +27,10 @@ contract Wrap {
         WrappedToken[] private _WrappedTokens;
 
         function wrapToken (uint16 sourceChain, address token, string memory name, string memory symbol) internal returns (address) {
-        require(orignalToWrap[token] == address(0), "Already wrapped");
-        require(bytes(name).length != 0, "Bad name");
-        require(bytes(symbol).length != 0, "Bad symbol");
-        require(sourceChain > 0, "Bad chain id");
+        require(orignalToWrap[token] == address(0), "Token already wrapped");
+        require(bytes(name).length != 0, "Put longer name");
+        require(bytes(symbol).length != 0, "Put longer symbol");
+        require(sourceChain > 0, "Can't be 0");
 
         ERC20PresetMinterPauser wrappedToken = new ERC20PresetMinterPauser(name, symbol);
 

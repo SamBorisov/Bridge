@@ -4,8 +4,10 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
+import "./Wrap.sol";
 
-contract Bridge {
+
+contract Bridge is Wrap {
 
     event Lock(uint8 targetChain, address token, uint256 amount, address receiver);
 

@@ -16,9 +16,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
-task("deploy-TT-testnet", "Deploys contract on a provided network")
+
+
+task("deploy-Bridge-testnet", "Deploys contract on a provided network")
     .setAction(async (taskArguments, hre, runSuper) => {
-        const deployTestToken = require("./scripts/deploy-TT");
+        const deployTestToken = require("./scripts/deploy-bridge");
         await deployTestToken(taskArguments);
    
     });

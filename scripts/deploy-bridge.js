@@ -12,7 +12,7 @@ async function deployBridge() {
     console.log('Account balance:', (await deployer.getBalance()).toString()); // We are printing the account balance
 
     const bridgeContract = await ethers.getContractFactory("Bridge"); // 
-    const bridge = await bridgeContract.deploy();
+    const bridge = await bridgeContract.deploy(await deployer.address);
     console.log('Waiting for bridge deployment...');
     await bridge.deployed();
 

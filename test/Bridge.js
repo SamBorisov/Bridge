@@ -6,16 +6,20 @@ const { TestToken } = require("../artifacts/contracts/TestToken.sol/TestToken.js
 describe('Bridge', function name () {
     let tokenContract
     let bridgeContract
+    let token
+    let bridge
+    let deployer
     const sourceChainId = 1
     const targetChainId = 2
+    const amountWei = '1000000000000000'
     
 
     before(async () => {
-        const [deployer] = await ethers.getSigners();
+        [deployer] = await ethers.getSigners();
         bridgeContract = await ethers.getContractFactory("Bridge");
         tokenContract = await ethers.getContractFactory("TestToken");
-        const token = await tokenContract.deploy();
-        const bridge = await bridgeContract.deploy(await deployer.address);
+        token = await tokenContract.deploy();
+        bridge = await bridgeContract.deploy(await deployer.address);
         await token.deployed();
         await bridge.deployed();
 
@@ -23,10 +27,10 @@ describe('Bridge', function name () {
       });
 
 it('Locks & emits Lock event', async () => {
-    await TestToken.increaseAllowance(bridge.address, amountWei)
-    await expect(bridge.lock(targetChainId, TestToken.address, amountWei))
+    await token.increaseAllowance(bridge.address, amountWei)
+    await expect(bridge.lock(targetChainId, token.address, amountWei))
       .to.emit(bridge, 'Lock')
-      .withArgs(targetChainId, TestToken.address, ownerWallet.address, amountWei)
+      .withArgs(targetChainId, token.address, amountWei, deployer.address)
   })
 
 

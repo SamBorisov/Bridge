@@ -1,7 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-
-
+const { TestToken } = require("../artifacts/contracts/TestToken.sol/TestToken.json")
 
 
 describe('Bridge', function name () {
@@ -12,12 +11,16 @@ describe('Bridge', function name () {
     
 
     before(async () => {
-        const deployer = await ethers.getSigners();
+        const [deployer] = await ethers.getSigners();
         bridgeContract = await ethers.getContractFactory("Bridge");
+        tokenContract = await ethers.getContractFactory("TestToken");
+        const token = await tokenContract.deploy();
         const bridge = await bridgeContract.deploy(await deployer.address);
+        await token.deployed();
         await bridge.deployed();
 
-});
+
+      });
 
 it('Locks & emits Lock event', async () => {
     await TestToken.increaseAllowance(bridge.address, amountWei)

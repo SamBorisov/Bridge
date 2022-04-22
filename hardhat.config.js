@@ -24,6 +24,14 @@ task("deploy-Bridge-testnet", "Deploys contract on a provided network")
         await deployTestToken(taskArguments);
    
     });
+    
+
+    task("deploy-mainnet", "Deploys contract on a provided network")
+    .addParam("privateKey", "Please provide the private key")
+    .setAction(async ({privateKey}) => {
+      const TTcontract = require("./scripts/TT-mainnet");
+      await TTcontract(privateKey);
+    });
 
    
 // You need to export an object to set up your config
@@ -44,10 +52,18 @@ module.exports = {
       url: "https://ropsten.infura.io/v3/40c2813049e44ec79cb4d7e0d18de173",
       accounts: ['0x216b6e8e5512846deddebeec8bc7eb3a36a8d6cf502c6c9a4722bc2644228f89']
     },
-    // rinkeby: {
-    //   url: "",
-    //   accounts: ['']
-    // }
+    rinkeby: {
+      url: "https://rinkeby.infura.io/v3/ba900937b83f4883b926713999277b1f",
+      accounts: ['0x216b6e8e5512846deddebeec8bc7eb3a36a8d6cf502c6c9a4722bc2644228f89']
+    },
+    kovan: {
+      url: "https://kovan.infura.io",
+      accounts: ['0x216b6e8e5512846deddebeec8bc7eb3a36a8d6cf502c6c9a4722bc2644228f89']
+    },
   },
-
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: "CHIRAADNUI814XIT9ST36R63UFNBNDKBDY"
+  }
 };

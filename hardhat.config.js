@@ -50,15 +50,15 @@ module.exports = {
 
     ropsten: {
       url: "https://ropsten.infura.io/v3/40c2813049e44ec79cb4d7e0d18de173",
-      accounts: ['0x216b6e8e5512846deddebeec8bc7eb3a36a8d6cf502c6c9a4722bc2644228f89']
+      accounts: ['']
      },
     // rinkeby: {
     //   url: "https://rinkeby.infura.io/v3/ba900937b83f4883b926713999277b1f",
-    //   accounts: ['0x216b6e8e5512846deddebeec8bc7eb3a36a8d6cf502c6c9a4722bc2644228f89']
+    //   accounts: ['']
     // },
     // kovan: {
     //   url: "https://kovan.infura.io",
-    //   accounts: ['0x216b6e8e5512846deddebeec8bc7eb3a36a8d6cf502c6c9a4722bc2644228f89']
+    //   accounts: ['']
     // },
   },
   etherscan: {

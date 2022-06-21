@@ -48,10 +48,10 @@ module.exports = {
     //   url:'http://127.0.0.1:8545/'
     // },
 
-    ropsten: {
-      url: "https://ropsten.infura.io/v3/40c2813049e44ec79cb4d7e0d18de173",
-      accounts: ['']
-     },
+    // ropsten: {
+    //   url: "https://ropsten.infura.io/v3/40c2813049e44ec79cb4d7e0d18de173",
+    //   accounts: ['']
+    //  },
     // rinkeby: {
     //   url: "https://rinkeby.infura.io/v3/ba900937b83f4883b926713999277b1f",
     //   accounts: ['']

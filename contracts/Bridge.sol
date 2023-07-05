@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol"; 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
@@ -11,36 +11,31 @@ import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol"
 contract Bridge is Ownable{
 
 
-    event Lock(uint8 indexed assetID, address indexed token, uint256 amount, address user, address receiver);
+    event Lock(uint8 indexed assetID, address indexed token, uint256 amount, address user);
 
     event Unlock(uint8 indexed assetID, address indexed token, uint256 amount, address user, address receiver);
 
 
     // Locking or Burining tokens
 
-    function lock(uint8 assetID, uint256 amount, address receiver) external {
+    function lock(uint8 assetID, uint256 amount) external {
 
         address token = tokenDetails[assetID].token;
 
         require(amount > 0,"Cannot Lock 0 tokens");
         require(token != address(0),"Not supported token");
         require(tokenDetails[assetID].assetID == assetID,"ID not found");
-        require(receiver != address(0),"The receiver shoud be a valid address");
 
         if(tokenDetails[assetID].wrapped){
 
-            require(IERC20(token).allowance(msg.sender, address(this)) >= amount, "Insufficient allowance");
-            require(IERC20(token).balanceOf(msg.sender) > amount,"Insufficient balance");
             ERC20PresetMinterPauser(token).burnFrom(msg.sender, amount);
 
         } else {
 
-            require(IERC20(token).allowance(msg.sender, address(this)) >= amount, "Insufficient allowance");
-            require(IERC20(token).balanceOf(msg.sender) >= amount, "Insufficient balance");
             IERC20(token).transferFrom(msg.sender, address(this), amount);
         }
 
-        emit Lock(assetID, address(token), amount, msg.sender, receiver);
+        emit Lock(assetID, address(token), amount, msg.sender);
 
     }
 
@@ -92,7 +87,6 @@ contract Bridge is Ownable{
         require(tokenDetails[assetID].token == address(0), "Token ID has address already");
         require(checkSavedValues(assetID, token) == false ,"Token ID or address already set");
 
-
         TokenInfo memory storeIt = TokenInfo({
             assetID: assetID,
             token: token,
@@ -101,7 +95,6 @@ contract Bridge is Ownable{
 
         tokenDetails[assetID] = storeIt;
         savedIDs.push(assetID);
-
 
         emit AssetAdded(assetID, token, wrapped);
    

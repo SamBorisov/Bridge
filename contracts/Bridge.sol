@@ -1,8 +1,9 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
@@ -21,36 +22,57 @@ contract Bridge is AccessControl{
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    // Voting functions
+    // Voting logic & functions
+
+    mapping(bytes32 => uint256) public voteCount;
+    mapping(address => uint256) public userVotes;
+    
+    struct Proposal {
+        address executor;
+        uint256 voteThreshold;
+        uint256 amount;
+        uint8 assetID;
+        uint8 targetChain;
+    }
 
     mapping(address => bool) public hasVoted;
-    mapping(bytes32 => uint256) public voteCount;
 
-    uint256 public threshold = 3; // Number of votes required to execute the function
+    uint256 public threshold = 3; // Number of votes required for execution
+    
+    mapping(bytes32 => Proposal) public proposals;
 
-    function vote(bytes32 proposalId,uint8 assetID, address receiver, uint256 amount) public {
-        require(hasRole(OBSERVER_ROLE, msg.sender), "Caller is not an observer");
+
+    function vote(bytes32 proposalId) public {
         require(!hasVoted[msg.sender], "Already voted");
-
+        require(hasRole(OBSERVER_ROLE, msg.sender), "Caller is not an observer");
 
         voteCount[proposalId] = voteCount[proposalId].add(1);
+        userVotes[msg.sender] = userVotes[msg.sender].add(1);
         hasVoted[msg.sender] = true;
 
-        if (voteCount[proposalId] >= threshold) {
-           unlock(assetID, amount, receiver);
-         }
+        if (voteCount[proposalId] >= threshold && userVotes[msg.sender] >= 3) {
+            executeProposal(proposalId);
+        }
+    }
+
+    function executeProposal(bytes32 proposalId) public view returns (address) {
+        require(userVotes[msg.sender] >= 3, "Caller does not have enough votes");
+        require(voteCount[proposalId] >= proposals[proposalId].voteThreshold, "Vote threshold not met");
+        address executor = proposals[proposalId].executor;
+        return executor;
+        
     }
 
     // Locking and Unlocking events
 
-    event Lock(uint8 indexed assetID, address indexed token, uint256 amount, address user);
+    event Lock(uint8 indexed assetID, address indexed token, uint256 amount, address user, uint8 targetChain);
 
     event Unlock(uint8 indexed assetID, address indexed token, uint256 amount, address user, address receiver);
 
 
     // Locking or Burining tokens
 
-    function lock(uint8 assetID, uint256 amount) external {
+    function lock(uint8 assetID, uint256 amount, uint8 targetChain) external {
 
         address token = tokenDetails[assetID].token;
 
@@ -67,13 +89,13 @@ contract Bridge is AccessControl{
             IERC20(token).transferFrom(msg.sender, address(this), amount);
         }
 
-        emit Lock(assetID, address(token), amount, msg.sender);
+        emit Lock(assetID, address(token), amount, msg.sender, targetChain);
 
     }
 
     // Unlocking or Minting tokens
 
-    function unlock(uint8 assetID, uint256 amount, address receiver) private {
+    function unlock(uint8 assetID, uint256 amount, address receiver) external {
 
         address token = tokenDetails[assetID].token;
 

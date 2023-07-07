@@ -21,6 +21,8 @@ contract Bridge is AccessControl{
 
     // Voting logic & functions
 
+    event Vote(bytes32 indexed proposalId, address executor, uint256 amount, uint8 assetID, uint8 sourceChain);
+
     address[] public voters;
 
     mapping(address => bool) public hasVoted;
@@ -37,7 +39,7 @@ contract Bridge is AccessControl{
     mapping(bytes32 => Proposal) public proposals;
     mapping(address => bytes32) public unlocker;
 
-    function vote(bytes32 proposalId, address _executor, uint256 _amount, uint8 _assetID, uint8 _sourceChain) public {
+    function vote(bytes32 proposalId, address _executor, uint256 _amount, uint8 _assetID, uint8 _sourceChain) external {
         require(!hasVoted[msg.sender], "Already voted");
         require(!proposals[proposalId].executed, "It is already executed");
         require(hasRole(OBSERVER_ROLE, msg.sender), "Caller does not have OBSERVER_ROLE");
@@ -62,6 +64,8 @@ contract Bridge is AccessControl{
         proposals[proposalId].voteCount ++;
         hasVoted[msg.sender] = true;
         voters.push(msg.sender);
+
+        emit Vote(proposalId, _executor, _amount, _assetID, _sourceChain);
 
     }
 
@@ -108,8 +112,9 @@ contract Bridge is AccessControl{
         require(receiver != address(0),"The receiver shoud be a valid address");
         // checking validations
         require(!proposals[unlocker[msg.sender]].executed, "It is already executed");
-        require(proposals[unlocker[msg.sender]].voteCount >= 3, "User Don't have enough votes yet");
+        require(amount <= proposals[unlocker[msg.sender]].amount, "Amount is more than the proposal");
         require(proposals[unlocker[msg.sender]].executor == msg.sender, "Caller is not the executor");
+        require(proposals[unlocker[msg.sender]].voteCount >= 3, "User Don't have enough votes yet");
 
         // unlocking or minting
         if(tokenDetails[assetID].wrapped){

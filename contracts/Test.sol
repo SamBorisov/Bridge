@@ -7,7 +7,9 @@ contract MyContract {
 
     address[] public voters;
 
-    mapping(address => bool) public hasVoted;
+    mapping(address => bool)  public hasVoted;
+
+    //     mapping(bytes32 => mapping(address => bool))  public hasVoted;
 
     struct Proposal {
         uint8 assetID;
@@ -19,6 +21,9 @@ contract MyContract {
     }
 
     mapping(bytes32 => Proposal) public proposals;
+    
+    mapping(bytes32 => uint8) public voteCount;
+
     mapping(address => bytes32) public unlocker;
 
     function vote(bytes32 proposalId, address _executor, uint256 _amount, uint8 _assetID, uint8 _sourceChain) public {

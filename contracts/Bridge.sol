@@ -3,15 +3,12 @@ pragma solidity ^0.8.0;
 
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 
 
 contract Bridge is AccessControl{
-
-    using SafeMath for uint256;
 
 
     //Setting up roles
@@ -24,44 +21,50 @@ contract Bridge is AccessControl{
 
     // Voting logic & functions
 
-    mapping(bytes32 => uint256) public voteCount;
-    mapping(address => uint256) public userVotes;
-    
-    struct Proposal {
-        address executor;
-        uint256 voteThreshold;
-        uint256 amount;
-        uint8 assetID;
-        uint8 targetChain;
-    }
+    address[] public voters;
 
     mapping(address => bool) public hasVoted;
 
-    uint256 public threshold = 3; // Number of votes required for execution
-    
+    struct Proposal {
+        uint8 assetID;
+        uint256 amount;
+        uint8 sourceChain;
+        address executor;
+        uint8 voteCount;
+        bool executed;
+    }
+
     mapping(bytes32 => Proposal) public proposals;
+    mapping(address => bytes32) public unlocker;
 
-
-    function vote(bytes32 proposalId) public {
+    function vote(bytes32 proposalId, address _executor, uint256 _amount, uint8 _assetID, uint8 _sourceChain) public {
         require(!hasVoted[msg.sender], "Already voted");
-        require(hasRole(OBSERVER_ROLE, msg.sender), "Caller is not an observer");
+        require(!proposals[proposalId].executed, "It is already executed");
+        require(hasRole(OBSERVER_ROLE, msg.sender), "Caller does not have OBSERVER_ROLE");
+        // basic checks
+        require(_amount > 0,"Cannot Unlock 0 tokens");
+        require(tokenDetails[_assetID].assetID == _assetID,"ID not found");
+        require(_executor != address(0),"The receiver shoud be a valid address");
 
-        voteCount[proposalId] = voteCount[proposalId].add(1);
-        userVotes[msg.sender] = userVotes[msg.sender].add(1);
-        hasVoted[msg.sender] = true;
-
-        if (voteCount[proposalId] >= threshold && userVotes[msg.sender] >= 3) {
-            executeProposal(proposalId);
+        if (proposals[proposalId].voteCount != 0) {
+            require(proposals[proposalId].assetID == _assetID, "Asset ID does not match");
+            require(proposals[proposalId].amount == _amount, "The amount does not match");
+            require(proposals[proposalId].executor == _executor, "The executor does not match");
+            require(proposals[proposalId].sourceChain == _sourceChain, "The source chain does not match");
+        } else {
+            proposals[proposalId].sourceChain = _sourceChain;
+            proposals[proposalId].executor = _executor;
+            proposals[proposalId].assetID = _assetID;
+            proposals[proposalId].amount = _amount;
+            unlocker[_executor] = proposalId;
         }
+
+        proposals[proposalId].voteCount ++;
+        hasVoted[msg.sender] = true;
+        voters.push(msg.sender);
+
     }
 
-    function executeProposal(bytes32 proposalId) public view returns (address) {
-        require(userVotes[msg.sender] >= 3, "Caller does not have enough votes");
-        require(voteCount[proposalId] >= proposals[proposalId].voteThreshold, "Vote threshold not met");
-        address executor = proposals[proposalId].executor;
-        return executor;
-        
-    }
 
     // Locking and Unlocking events
 
@@ -103,8 +106,12 @@ contract Bridge is AccessControl{
         require(token != address(0),"Not supported token");
         require(tokenDetails[assetID].assetID == assetID,"ID not found");
         require(receiver != address(0),"The receiver shoud be a valid address");
+        // checking validations
+        require(!proposals[unlocker[msg.sender]].executed, "It is already executed");
+        require(proposals[unlocker[msg.sender]].voteCount >= 3, "User Don't have enough votes yet");
+        require(proposals[unlocker[msg.sender]].executor == msg.sender, "Caller is not the executor");
 
-
+        // unlocking or minting
         if(tokenDetails[assetID].wrapped){
 
             ERC20PresetMinterPauser(token).mint(receiver, amount);
@@ -112,6 +119,14 @@ contract Bridge is AccessControl{
         } else {
             require(IERC20(token).balanceOf(address(this)) > amount,"The Bridge don't have enough tokes");
             IERC20(token).transfer(receiver, amount);
+        }
+        // reseting the values after unlocking
+        proposals[unlocker[msg.sender]].voteCount = 0;
+        proposals[unlocker[msg.sender]].executed = true;
+        unlocker[msg.sender] = 0x00;
+        // reseting the voters, so  they can vote for the next transaction
+        for(uint i = 0; i < voters.length; i++) {
+            hasVoted[voters[i]] = false;
         }
 
         emit Unlock(assetID, address(token), amount, msg.sender, receiver);

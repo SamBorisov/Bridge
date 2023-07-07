@@ -84,8 +84,8 @@ describe('Bridge Contract', () => {
     const unlockTransaction = await bridge.connect(executor).unlock(assetID, amount, executor.address)
 
     expect(unlockTransaction)
-    .to.emit(bridge, 'Lock')
-    .withArgs(assetID, token.address, amount, executor.address, targetChain);
+    .to.emit(bridge, 'Unlock')
+    .withArgs(assetID, token.address, amount, executor.address, executor.address);
     
     // check for balance
     expect(await token.balanceOf(executor.address)).to.equal(1000);

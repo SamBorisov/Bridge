@@ -19,53 +19,72 @@ contract Bridge is AccessControl{
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
+
+    // execute function after 50 blocks 
+
+    uint256 public executionBlock;
+    uint256 public requiredBlockDifference = 50;
+
+    modifier afterRequiredBlockDifference() {
+        require(block.number >= executionBlock + requiredBlockDifference, "Block difference not met");
+        _;
+    }
+
     // Voting logic & functions
 
-    event Vote(bytes32 indexed proposalId, address executor, uint256 amount, uint8 assetID, uint8 sourceChain);
+    event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint8 assetID, uint256 sourceChain);
 
-    address[] public voters;
+    mapping(bytes32 => mapping(address => bool))  public hasVoted;
 
-    mapping(address => bool) public hasVoted;
+    enum Status {
+        OnGoing,
+        ReadyToUnlock,
+        Unlocked,
+        Rejected
+    }
 
     struct Proposal {
         uint8 assetID;
         uint256 amount;
-        uint8 sourceChain;
+        uint256 sourceChain;
         address executor;
         uint8 voteCount;
-        bool executed;
+        Status status;
     }
 
     mapping(bytes32 => Proposal) public proposals;
     mapping(address => bytes32) public unlocker;
 
-    function vote(bytes32 proposalId, address _executor, uint256 _amount, uint8 _assetID, uint8 _sourceChain) external {
-        require(!hasVoted[msg.sender], "Already voted");
-        require(!proposals[proposalId].executed, "It is already executed");
+    function vote(bytes32 _transactionHash, address _executor, uint256 _amount, uint8 _assetID, uint256 _sourceChain) external {
+
+        bytes32 proposalHash = keccak256(abi.encodePacked(_transactionHash, _executor, _amount, _assetID, _sourceChain));
+
+        require(!hasVoted[proposalHash][msg.sender], "Already voted");
         require(hasRole(OBSERVER_ROLE, msg.sender), "Caller does not have OBSERVER_ROLE");
+        require(proposals[proposalHash].status == Status.OnGoing , "It has enough votes already");
         // basic checks
         require(_amount > 0,"Cannot Unlock 0 tokens");
-        require(tokenDetails[_assetID].assetID == _assetID,"ID not found");
         require(_executor != address(0),"The receiver shoud be a valid address");
 
-        if (proposals[proposalId].voteCount != 0) {
-            require(proposals[proposalId].assetID == _assetID, "Asset ID does not match");
-            require(proposals[proposalId].amount == _amount, "The amount does not match");
-            require(proposals[proposalId].executor == _executor, "The executor does not match");
-            require(proposals[proposalId].sourceChain == _sourceChain, "The source chain does not match");
-        } else {
-            proposals[proposalId].sourceChain = _sourceChain;
-            proposals[proposalId].executor = _executor;
-            proposals[proposalId].assetID = _assetID;
-            proposals[proposalId].amount = _amount;
-            unlocker[_executor] = proposalId;
+        if (proposals[proposalHash].voteCount == 0) {
+
+            proposals[proposalHash].sourceChain = _sourceChain;
+            proposals[proposalHash].executor = _executor;
+            proposals[proposalHash].assetID = _assetID;
+            proposals[proposalHash].amount = _amount;
+            proposals[proposalHash].status = Status.OnGoing;
+            unlocker[_executor] = proposalHash;
         }
 
-        proposals[proposalId].voteCount ++;
-        hasVoted[msg.sender] = true;
-        voters.push(msg.sender);
+        proposals[proposalHash].voteCount ++;
+        hasVoted[proposalHash][msg.sender] = true;
 
-        emit Vote(proposalId, _executor, _amount, _assetID, _sourceChain);
+        if (proposals[proposalHash].voteCount >= 3) {
+                proposals[proposalHash].status = Status.ReadyToUnlock;
+                executionBlock = block.number;
+            }
+
+        emit Vote(proposalHash, _transactionHash, _executor, _amount, _assetID, _sourceChain);
 
     }
 
@@ -102,19 +121,18 @@ contract Bridge is AccessControl{
 
     // Unlocking or Minting tokens
 
-    function unlock(uint8 assetID, uint256 amount, address receiver) external {
+    function unlock(uint8 assetID, uint256 amount, address receiver) external afterRequiredBlockDifference{
 
         address token = tokenDetails[assetID].token;
 
         require(amount > 0,"Cannot Unlock 0 tokens");
         require(token != address(0),"Not supported token");
-        require(tokenDetails[assetID].assetID == assetID,"ID not found");
         require(receiver != address(0),"The receiver shoud be a valid address");
         // checking validations
-        require(!proposals[unlocker[msg.sender]].executed, "It is already executed");
+        require(proposals[unlocker[msg.sender]].voteCount >= 3, "User Don't have enough votes yet");
         require(amount <= proposals[unlocker[msg.sender]].amount, "Amount is more than the proposal");
         require(proposals[unlocker[msg.sender]].executor == msg.sender, "Caller is not the executor");
-        require(proposals[unlocker[msg.sender]].voteCount >= 3, "User Don't have enough votes yet");
+        require(proposals[unlocker[msg.sender]].status == Status.ReadyToUnlock , "Status isn't ready to be Unlocked");
 
         // unlocking or minting
         if(tokenDetails[assetID].wrapped){
@@ -126,13 +144,8 @@ contract Bridge is AccessControl{
             IERC20(token).transfer(receiver, amount);
         }
         // reseting the values after unlocking
-        proposals[unlocker[msg.sender]].voteCount = 0;
-        proposals[unlocker[msg.sender]].executed = true;
+        proposals[unlocker[msg.sender]].status = Status.Unlocked;
         unlocker[msg.sender] = 0x00;
-        // reseting the voters, so  they can vote for the next transaction
-        for(uint i = 0; i < voters.length; i++) {
-            hasVoted[voters[i]] = false;
-        }
 
         emit Unlock(assetID, address(token), amount, msg.sender, receiver);
 

@@ -35,6 +35,7 @@ contract Bridge is AccessControl{
     event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint8 assetID, uint256 sourceChain);
 
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
+    mapping(bytes32 => uint8)  public voteCount;
 
     enum Status {
         OnGoing,
@@ -48,7 +49,6 @@ contract Bridge is AccessControl{
         uint256 amount;
         uint256 sourceChain;
         address executor;
-        uint8 voteCount;
         Status status;
     }
 
@@ -66,7 +66,7 @@ contract Bridge is AccessControl{
         require(_amount > 0,"Cannot Unlock 0 tokens");
         require(_executor != address(0),"The receiver shoud be a valid address");
 
-        if (proposals[proposalHash].voteCount == 0) {
+        if (voteCount[proposalHash] == 0) {
 
             proposals[proposalHash].sourceChain = _sourceChain;
             proposals[proposalHash].executor = _executor;
@@ -76,10 +76,10 @@ contract Bridge is AccessControl{
             unlocker[_executor] = proposalHash;
         }
 
-        proposals[proposalHash].voteCount ++;
+        voteCount[proposalHash] ++;
         hasVoted[proposalHash][msg.sender] = true;
 
-        if (proposals[proposalHash].voteCount >= 3) {
+        if (voteCount[proposalHash] >= 3) {
                 proposals[proposalHash].status = Status.ReadyToUnlock;
                 executionBlock = block.number;
             }
@@ -129,7 +129,7 @@ contract Bridge is AccessControl{
         require(token != address(0),"Not supported token");
         require(receiver != address(0),"The receiver shoud be a valid address");
         // checking validations
-        require(proposals[unlocker[msg.sender]].voteCount >= 3, "User Don't have enough votes yet");
+        require(voteCount[unlocker[msg.sender]] >= 3, "User Don't have enough votes yet");
         require(amount <= proposals[unlocker[msg.sender]].amount, "Amount is more than the proposal");
         require(proposals[unlocker[msg.sender]].executor == msg.sender, "Caller is not the executor");
         require(proposals[unlocker[msg.sender]].status == Status.ReadyToUnlock , "Status isn't ready to be Unlocked");

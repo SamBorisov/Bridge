@@ -83,9 +83,13 @@ describe('Functions & Errors', () => {
     it('- should revert locking if ID is not set to a token address', async () => {
         await expect(bridge.connect(executor).lock(2, amount, targetChain)).to.be.revertedWith('Not supported token');
     });
-    it('+ locking(burining) tokens', async () => {
+    it('+ locking /burning/ tokens', async () => {
         const lockTransaction = await bridge.connect(executor).lock(assetID, amount, targetChain);
         lockTransactionHash = lockTransaction.hash;
+    });
+    it('+ amount of the executor is burned from his balance', async () => {
+        expect(await token.balanceOf(bridge.address)).to.equal(0);
+        expect(await token.balanceOf(executor.address)).to.equal(900);
     });
 
     // Voting -----------------------------------------------------------
@@ -146,9 +150,12 @@ describe('Functions & Errors', () => {
     it('- should revert unlock if bridge do not have minter role', async () => {
         await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('ERC20PresetMinterPauser: must have minter role to mint');
     });
-    it('+ unlocking(minting) tokens and checking the balance', async () => {
+    it('+ unlocking /minting/ tokens ', async () => {
         await token.grantRole(await token.MINTER_ROLE(), bridge.address);
         await bridge.connect(executor).unlock(assetID, amount, executor.address)
+    });
+    it('+ amount is minted to the executor in his balance', async () => {
+        expect(await token.balanceOf(bridge.address)).to.equal(0);
         expect(await token.balanceOf(executor.address)).to.equal(1000);
     });
     it('- should revert unlock if status is not ready to be unlocked', async () => {

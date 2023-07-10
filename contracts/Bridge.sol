@@ -138,7 +138,7 @@ contract Bridge is AccessControl{
             ERC20PresetMinterPauser(token).mint(receiver, amount);
 
         } else {
-            require(IERC20(token).balanceOf(address(this)) >= amount,"The Bridge don't have enough tokes");
+            require(IERC20(token).balanceOf(address(this)) >= amount,"The Bridge does not have enough tokes");
             IERC20(token).transfer(receiver, amount);
         }
         // changing status to unlocked

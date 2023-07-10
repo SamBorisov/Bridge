@@ -87,6 +87,10 @@ describe('Functions & Errors', () => {
         const lockTransaction = await bridge.connect(executor).lock(assetID, amount, targetChain);
         lockTransactionHash = lockTransaction.hash;
     });
+    it('+ balances of bridge & executor shoud be updated after locking', async () => {
+        expect(await token.balanceOf(bridge.address)).to.equal(100);
+        expect(await token.balanceOf(executor.address)).to.equal(900);
+    });
 
     // Voting -----------------------------------------------------------
     it('------------------------Voting------------------------', async () => {});
@@ -125,7 +129,6 @@ describe('Functions & Errors', () => {
         await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('50 blocks not passed until last vote');
     });
     it('- should revert if user try to unlock 0 tokens', async () => {
-        // Fast forward 50 blocks
         for (let i = 0; i < 50; i++) {
             await network.provider.send('evm_mine', []);
         }
@@ -143,11 +146,25 @@ describe('Functions & Errors', () => {
     it('- should revert unlock if the amount is bigger then expected', async () => {
         await expect(bridge.connect(executor).unlock(assetID, 101, executor.address)).to.be.revertedWith('Amount is more than the proposal');
     });
-    it('+ unlocking tokens and checking the balance', async () => {
+    it('+ unlocking tokens', async () => {
         await bridge.connect(executor).unlock(assetID, amount, executor.address)
+    });
+    it('+ balances of bridge & executor shoud be updated after unlocking', async () => {
+        expect(await token.balanceOf(bridge.address)).to.equal(0);
         expect(await token.balanceOf(executor.address)).to.equal(1000);
     });
     it('- should revert unlock if status is not ready to be unlocked', async () => {
         await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status is not ready to be Unlocked');
+    });
+    it('- should revert unlock with fake votes, if bridge do not have enough tokens', async () => {
+        const fakeHash = '0xa550239c026596b311b11b350090b97488c297c3803b82ccced6fc3b84584990';
+        await bridge.connect(observerAddresses1).vote(fakeHash, executor.address, amount, assetID, sourceChain);
+        await bridge.connect(observerAddresses2).vote(fakeHash, executor.address, amount, assetID, sourceChain);
+        await bridge.connect(observerAddresses3).vote(fakeHash, executor.address, amount, assetID, sourceChain);
+ 
+        for (let i = 0; i < 50; i++) {
+            await network.provider.send('evm_mine', []);
+        }
+        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('The Bridge does not have enough tokes');
     });
 });

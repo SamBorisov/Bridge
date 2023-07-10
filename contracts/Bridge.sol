@@ -20,13 +20,12 @@ contract Bridge is AccessControl{
     }
 
 
-    // execute function after 50 blocks 
+    // execute after 50 blocks modifier
 
     uint256 public executionBlock;
-    uint256 public requiredBlockDifference = 50;
 
-    modifier afterRequiredBlockDifference() {
-        require(block.number >= executionBlock + requiredBlockDifference, "Block difference not met");
+    modifier after50Block() {
+        require(block.number >= executionBlock + 50, "50 blocks not passed until last vote");
         _;
     }
 
@@ -60,11 +59,12 @@ contract Bridge is AccessControl{
         bytes32 proposalHash = keccak256(abi.encodePacked(_transactionHash, _executor, _amount, _assetID, _sourceChain));
 
         require(!hasVoted[proposalHash][msg.sender], "Already voted");
-        require(hasRole(OBSERVER_ROLE, msg.sender), "Caller does not have OBSERVER_ROLE");
-        require(proposals[proposalHash].status == Status.OnGoing , "It has enough votes already");
+        require(hasRole(OBSERVER_ROLE, msg.sender), "Caller is not observer");
+        require(proposals[proposalHash].status == Status.OnGoing , "Transaction has enough votes already");
         // basic checks
-        require(_amount > 0,"Cannot Unlock 0 tokens");
-        require(_executor != address(0),"The receiver shoud be a valid address");
+        require(_amount > 0,"Cannot vote for 0 tokens");
+        require(_executor != address(0),"The executor shoud be a valid address");
+        require(tokenDetails[_assetID].token != address(0),"Not supported token");
 
         if (voteCount[proposalHash] == 0) {
 
@@ -104,7 +104,6 @@ contract Bridge is AccessControl{
 
         require(amount > 0,"Cannot Lock 0 tokens");
         require(token != address(0),"Not supported token");
-        require(tokenDetails[assetID].assetID == assetID,"ID not found");
 
         if(tokenDetails[assetID].wrapped){
 
@@ -121,7 +120,7 @@ contract Bridge is AccessControl{
 
     // Unlocking or Minting tokens
 
-    function unlock(uint8 assetID, uint256 amount, address receiver) external afterRequiredBlockDifference{
+    function unlock(uint8 assetID, uint256 amount, address receiver) external after50Block{
 
         address token = tokenDetails[assetID].token;
 
@@ -129,10 +128,9 @@ contract Bridge is AccessControl{
         require(token != address(0),"Not supported token");
         require(receiver != address(0),"The receiver shoud be a valid address");
         // checking validations
-        require(voteCount[unlocker[msg.sender]] >= 3, "User Don't have enough votes yet");
+        require(voteCount[unlocker[msg.sender]] >= 3, "Executor does not have enough votes");
         require(amount <= proposals[unlocker[msg.sender]].amount, "Amount is more than the proposal");
-        require(proposals[unlocker[msg.sender]].executor == msg.sender, "Caller is not the executor");
-        require(proposals[unlocker[msg.sender]].status == Status.ReadyToUnlock , "Status isn't ready to be Unlocked");
+        require(proposals[unlocker[msg.sender]].status == Status.ReadyToUnlock , "Status is not ready to be Unlocked");
 
         // unlocking or minting
         if(tokenDetails[assetID].wrapped){
@@ -143,9 +141,8 @@ contract Bridge is AccessControl{
             require(IERC20(token).balanceOf(address(this)) >= amount,"The Bridge don't have enough tokes");
             IERC20(token).transfer(receiver, amount);
         }
-        // reseting the values after unlocking
+        // changing status to unlocked
         proposals[unlocker[msg.sender]].status = Status.Unlocked;
-        unlocker[msg.sender] = 0x00;
 
         emit Unlock(assetID, address(token), amount, msg.sender, receiver);
 

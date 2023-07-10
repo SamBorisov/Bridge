@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('Bridge Contract', () => {
+describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
     let Bridge;
     let bridge;
     let bridge2;

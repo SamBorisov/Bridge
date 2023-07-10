@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('Bridge Contract', () => {
+describe('Bridge Simple Test', () => {
     let Bridge;
     let bridge;
     let ERC20PresetMinterPauser;

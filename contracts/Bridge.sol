@@ -55,6 +55,9 @@ contract Bridge is AccessControl{
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
     mapping(bytes32 => uint8)  public voteCount;
 
+    // aproved propsals list (can remove this if not needed)
+    bytes32[] public approvedProposalsList;
+
     enum Status {
         Pending,
         Approved,
@@ -101,6 +104,7 @@ contract Bridge is AccessControl{
         if (voteCount[proposalHash] >= 3) {
                 proposals[proposalHash].status = Status.Approved;
                 executionBlock = block.number;
+                approvedProposalsList.push(proposalHash);
                 emit Approved(proposalHash, _transactionHash);
             }
 
@@ -218,34 +222,5 @@ contract Bridge is AccessControl{
         }
         return false;
     }
-
-
-    function getProposalDetails(bytes32 proposalHash) external view returns(uint8, uint256, uint256, address, Status) {
-
-        return (proposals[proposalHash].assetID, proposals[proposalHash].amount, proposals[proposalHash].sourceChain, proposals[proposalHash].executor, proposals[proposalHash].status);
-
-    }
-
-
-    function getApprovedProposals() external view returns(bytes32[] memory) {
-
-        bytes32[] memory approvedProposals = new bytes32[](savedIDs.length);
-
-        uint256 count = 0;
-
-        for (uint256 i = 0; i < savedIDs.length; i++) {
-
-            bytes32 proposalHash = keccak256(abi.encodePacked(savedIDs[i], proposals[unlocker[msg.sender]].executor, proposals[unlocker[msg.sender]].amount, proposals[unlocker[msg.sender]].assetID, proposals[unlocker[msg.sender]].sourceChain));
-
-            if (proposals[proposalHash].status == Status.Approved) {
-
-                approvedProposals[count] = proposalHash;
-                count ++;
-            }
-        }
-
-        return approvedProposals;
-    }
-
  
 }

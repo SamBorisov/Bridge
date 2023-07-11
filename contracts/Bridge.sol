@@ -25,18 +25,18 @@ contract Bridge is AccessControl{
 
     event AssetAdded(uint16 indexed assetID,address indexed token, bool wrapped);
 
-        mapping(uint8 => TokenInfo) public tokenDetails;
+        mapping(uint16 => TokenInfo) public tokenDetails;
 
         struct TokenInfo {
-            uint8 assetID;
+            uint16 assetID;
             address token;
             bool wrapped;
         }
 
-        uint8[] internal savedIDs;
+        uint16[] internal savedIDs;
         
 
-    function addAsset(uint8 assetID, address token, bool wrapped) external {
+    function addAsset(uint16 assetID, address token, bool wrapped) external {
 
         require(hasRole(getRoleAdmin(DEFAULT_ADMIN_ROLE), _msgSender()), "AccessControl: sender must be an admin to add Asset");
         require(assetID > 0, "ID cannot be 0"); 
@@ -58,14 +58,14 @@ contract Bridge is AccessControl{
 
     // _______________Locking and Unlocking_______________
 
-    event Lock(uint8 indexed assetID, address indexed token, uint256 amount, address user, uint256 targetChain);
+    event Lock(uint16 indexed assetID, address indexed token, uint256 amount, address user, uint256 targetChain);
 
-    event Unlock(uint8 indexed assetID, address indexed token, uint256 amount, address user, address receiver);
+    event Unlock(uint16 indexed assetID, address indexed token, uint256 amount, address user, address receiver);
 
 
     // Locking or Burining tokens
 
-    function lock(uint8 assetID, uint256 amount, uint8 targetChain) external {
+    function lock(uint16 assetID, uint256 amount, uint256 targetChain) external {
 
         address token = tokenDetails[assetID].token;
 
@@ -87,7 +87,7 @@ contract Bridge is AccessControl{
 
     // Unlocking or Minting tokens
 
-    function unlock(uint8 assetID, uint256 amount, address receiver) external after50Block{
+    function unlock(uint16 assetID, uint256 amount, address receiver) external after50Block{
 
         address token = tokenDetails[assetID].token;
 
@@ -117,7 +117,7 @@ contract Bridge is AccessControl{
 
     // _______________Voting logic & functions_______________
 
-    event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint8 assetID, uint256 sourceChain);
+    event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint16 assetID, uint256 sourceChain);
     event Approved(bytes32 indexed proposalHash , bytes32 indexed transactionHash);
 
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
@@ -134,7 +134,7 @@ contract Bridge is AccessControl{
     }
 
     struct Proposal {
-        uint8 assetID;
+        uint16 assetID;
         uint256 amount;
         uint256 sourceChain;
         address executor;
@@ -144,7 +144,7 @@ contract Bridge is AccessControl{
     mapping(bytes32 => Proposal) public proposals;
     mapping(address => bytes32) public unlocker;
 
-    function vote(bytes32 _transactionHash, address _executor, uint256 _amount, uint8 _assetID, uint256 _sourceChain) external {
+    function vote(bytes32 _transactionHash, address _executor, uint256 _amount, uint16 _assetID, uint256 _sourceChain) external {
 
         bytes32 proposalHash = keccak256(abi.encodePacked(_transactionHash, _executor, _amount, _assetID, _sourceChain));
 
@@ -207,7 +207,7 @@ contract Bridge is AccessControl{
 
     // View functions_______________
 
-    function checkSavedValues(uint8 assetID, address token) internal view returns(bool) {
+    function checkSavedValues(uint16 assetID, address token) internal view returns(bool) {
 
         for (uint256 i = 0; i < savedIDs.length; i++) {
             if (tokenDetails[savedIDs[i]].assetID == assetID || tokenDetails[savedIDs[i]].token == token) {

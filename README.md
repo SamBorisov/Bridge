@@ -116,9 +116,9 @@ event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, addres
 event Approved(bytes32 indexed proposalHash , bytes32 indexed transactionHash);
 ```
 
-### Defend
+## Defend
 
-Defends a proposal on the source blockchain.
+Defending a proposal on the blockchain if is incorrect.
 
 ```solidity
 function defend(bytes32 proposalHash) external;

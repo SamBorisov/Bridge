@@ -159,6 +159,6 @@ describe('Functions & Errors', () => {
         expect(await token.balanceOf(executor.address)).to.equal(1000);
     });
     it('- should revert unlock if status is not ready to be unlocked', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status is not ready to be Unlocked');
+        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
     });
 });

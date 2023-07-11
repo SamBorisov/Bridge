@@ -154,7 +154,7 @@ describe('Functions & Errors', () => {
         expect(await token.balanceOf(executor.address)).to.equal(1000);
     });
     it('- should revert unlock if status is not ready to be unlocked', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status is not ready to be Unlocked');
+        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
     });
     it('- should revert unlock with fake votes, if bridge do not have enough tokens', async () => {
         const fakeHash = '0xa550239c026596b311b11b350090b97488c297c3803b82ccced6fc3b84584990';
@@ -165,6 +165,6 @@ describe('Functions & Errors', () => {
         for (let i = 0; i < 50; i++) {
             await network.provider.send('evm_mine', []);
         }
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('The Bridge does not have enough tokes');
+        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('ERC20: transfer amount exceeds balance');
     });
 });

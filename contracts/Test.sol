@@ -1,68 +1,142 @@
-// SPDX-License-Identifier: Unlicense
+//SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
 
-contract MyContract {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
 
-    address[] public voters;
 
-    mapping(address => bool)  public hasVoted;
+contract Test is AccessControl{
 
-    //     mapping(bytes32 => mapping(address => bool))  public hasVoted;
+
+    //Setting up roles
+
+    bytes32 public constant OBSERVER_ROLE = keccak256("OBSERVER_ROLE");
+    bytes32 public constant DEFENDER_ROLE = keccak256("DEFENDER_ROLE");
+
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+
+    // execute after 50 blocks modifier
+
+    uint256 public executionBlock;
+
+    modifier after50Block() {
+        require(block.number >= executionBlock + 50, "50 blocks not passed until last vote");
+        _;
+    }
+
+    // Defend logic & functions
+
+    event Defend(bytes32 indexed proposalHash, Status status);
+
+    function defend(bytes32 proposalHash) external {
+    
+            require(hasRole(DEFENDER_ROLE, msg.sender), "Caller is not defender");
+            require(proposals[proposalHash].status == Status.ReadyToUnlock, string(abi.encodePacked("Transaction status is ", proposals[proposalHash].status)) );
+
+            proposals[proposalHash].status = Status.Rejected;
+    
+            emit Defend(proposalHash, Status.Rejected);
+        
+    }
+
+    // Voting logic & functions
+
+    event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint8 assetID, uint256 sourceChain);
+    event Approved(bytes32 indexed proposalHash);
+
+    mapping(bytes32 => mapping(address => bool))  public hasVoted;
+    mapping(bytes32 => uint8)  public voteCount;
+
+    enum Status {
+        OnGoing,
+        ReadyToUnlock,
+        Unlocked,
+        Rejected
+    }
 
     struct Proposal {
         uint8 assetID;
         uint256 amount;
-        uint8 sourceChain;
+        uint256 sourceChain;
         address executor;
-        uint8 voteCount;
-        bool executed;
+        Status status;
     }
 
     mapping(bytes32 => Proposal) public proposals;
-    
-    mapping(bytes32 => uint8) public voteCount;
-
     mapping(address => bytes32) public unlocker;
 
-    function vote(bytes32 proposalId, address _executor, uint256 _amount, uint8 _assetID, uint8 _sourceChain) public {
-        require(!hasVoted[msg.sender], "Already voted");
-        require(!proposals[proposalId].executed, "It is already executed");
+    function vote(bytes32 _transactionHash, address _executor, uint256 _amount, uint8 _assetID, uint256 _sourceChain) external {
 
-        if (proposals[proposalId].voteCount != 0) {
-            require(proposals[proposalId].assetID == _assetID, "Asset ID does not match");
-            require(proposals[proposalId].amount == _amount, "The amount does not match");
-            require(proposals[proposalId].executor == _executor, "The executor does not match");
-            require(proposals[proposalId].sourceChain == _sourceChain, "The source chain does not match");
-        } else {
-            proposals[proposalId].sourceChain = _sourceChain;
-            proposals[proposalId].executor = _executor;
-            proposals[proposalId].assetID = _assetID;
-            proposals[proposalId].amount = _amount;
-            unlocker[_executor] = proposalId;
+        bytes32 proposalHash = keccak256(abi.encodePacked(_transactionHash, _executor, _amount, _assetID, _sourceChain));
+
+        require(!hasVoted[proposalHash][msg.sender], "Already voted");
+        require(hasRole(OBSERVER_ROLE, msg.sender), "Caller is not observer");
+        require(proposals[proposalHash].status == Status.OnGoing , "Transaction has enough votes already");
+        // basic checks
+        require(_amount > 0,"Cannot vote for 0 tokens");
+        require(_executor != address(0),"The executor shoud be a valid address");
+        require(tokenDetails[_assetID].token != address(0),"Not supported token");
+
+        if (voteCount[proposalHash] == 0) {
+
+            proposals[proposalHash].sourceChain = _sourceChain;
+            proposals[proposalHash].executor = _executor;
+            proposals[proposalHash].assetID = _assetID;
+            proposals[proposalHash].amount = _amount;
+            proposals[proposalHash].status = Status.OnGoing;
+            unlocker[_executor] = proposalHash;
         }
 
-        proposals[proposalId].voteCount ++;
-        hasVoted[msg.sender] = true;
-        voters.push(msg.sender);
+        voteCount[proposalHash] ++;
+        hasVoted[proposalHash][msg.sender] = true;
+
+        if (voteCount[proposalHash] >= 3) {
+                proposals[proposalHash].status = Status.ReadyToUnlock;
+                executionBlock = block.number;
+                emit Approved(proposalHash);
+            }
+
+        emit Vote(proposalHash, _transactionHash, _executor, _amount, _assetID, _sourceChain);
 
     }
 
-    function executeProposal() public {
-         
-        require(!proposals[unlocker[msg.sender]].executed, "It is already executed");
-        require(proposals[unlocker[msg.sender]].voteCount >= 3, "User Don't have enough votes yet");
-        require(proposals[unlocker[msg.sender]].executor == msg.sender, "Caller is not the executor");
+        // Adding and Saving tokens
 
+    event AssetAdded(uint16 indexed assetID,address indexed token, bool wrapped);
 
-        proposals[unlocker[msg.sender]].voteCount = 0;
-        proposals[unlocker[msg.sender]].executed = true;
-        unlocker[msg.sender] = 0x00;
+        mapping(uint8 => TokenInfo) public tokenDetails;
 
-        for(uint i = 0; i < voters.length; i++) {
-            hasVoted[voters[i]] = false;
+        struct TokenInfo {
+            uint8 assetID;
+            address token;
+            bool wrapped;
         }
 
+        uint8[] internal savedIDs;
+
+
+    function addAsset(uint8 assetID, address token, bool wrapped) external {
+
+        require(hasRole(getRoleAdmin(DEFAULT_ADMIN_ROLE), _msgSender()), "AccessControl: sender must be an admin to add Asset");
+        require(assetID > 0, "ID cannot be 0"); 
+        require(tokenDetails[assetID].token == address(0), "Token ID has address already");
+
+        TokenInfo memory storeIt = TokenInfo({
+            assetID: assetID,
+            token: token,
+            wrapped: wrapped
+        });
+
+        tokenDetails[assetID] = storeIt;
+        savedIDs.push(assetID);
+
+        emit AssetAdded(assetID, token, wrapped);
+   
     }
 }

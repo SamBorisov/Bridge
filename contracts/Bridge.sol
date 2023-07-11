@@ -14,6 +14,7 @@ contract Bridge is AccessControl{
     //Setting up roles
 
     bytes32 public constant OBSERVER_ROLE = keccak256("OBSERVER_ROLE");
+    bytes32 public constant DEFENDER_ROLE = keccak256("DEFENDER_ROLE");
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -29,16 +30,34 @@ contract Bridge is AccessControl{
         _;
     }
 
+
+    // Defend logic & functions
+
+    event Defend(bytes32 indexed proposalHash, Status status);
+
+    function defend(bytes32 proposalHash) external {
+    
+            require(hasRole(DEFENDER_ROLE, msg.sender), "Caller is not defender");
+            require(proposals[proposalHash].status == Status.Approved, "Transaction status is not Approved");
+
+            proposals[proposalHash].status = Status.Rejected;
+    
+            emit Defend(proposalHash, Status.Rejected);
+        
+    }
+
+
     // Voting logic & functions
 
     event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint8 assetID, uint256 sourceChain);
+    event Approved(bytes32 indexed proposalHash);
 
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
     mapping(bytes32 => uint8)  public voteCount;
 
     enum Status {
-        OnGoing,
-        ReadyToUnlock,
+        Pending,
+        Approved,
         Unlocked,
         Rejected
     }
@@ -60,7 +79,7 @@ contract Bridge is AccessControl{
 
         require(!hasVoted[proposalHash][msg.sender], "Already voted");
         require(hasRole(OBSERVER_ROLE, msg.sender), "Caller is not observer");
-        require(proposals[proposalHash].status == Status.OnGoing , "Transaction has enough votes already");
+        require(proposals[proposalHash].status == Status.Pending , "Transaction has enough votes already");
         // basic checks
         require(_amount > 0,"Cannot vote for 0 tokens");
         require(_executor != address(0),"The executor shoud be a valid address");
@@ -72,7 +91,7 @@ contract Bridge is AccessControl{
             proposals[proposalHash].executor = _executor;
             proposals[proposalHash].assetID = _assetID;
             proposals[proposalHash].amount = _amount;
-            proposals[proposalHash].status = Status.OnGoing;
+            proposals[proposalHash].status = Status.Pending;
             unlocker[_executor] = proposalHash;
         }
 
@@ -80,8 +99,9 @@ contract Bridge is AccessControl{
         hasVoted[proposalHash][msg.sender] = true;
 
         if (voteCount[proposalHash] >= 3) {
-                proposals[proposalHash].status = Status.ReadyToUnlock;
+                proposals[proposalHash].status = Status.Approved;
                 executionBlock = block.number;
+                emit Approved(proposalHash);
             }
 
         emit Vote(proposalHash, _transactionHash, _executor, _amount, _assetID, _sourceChain);
@@ -118,6 +138,7 @@ contract Bridge is AccessControl{
 
     }
 
+
     // Unlocking or Minting tokens
 
     function unlock(uint8 assetID, uint256 amount, address receiver) external after50Block{
@@ -130,7 +151,7 @@ contract Bridge is AccessControl{
         // checking validations
         require(voteCount[unlocker[msg.sender]] >= 3, "Executor does not have enough votes");
         require(amount <= proposals[unlocker[msg.sender]].amount, "Amount is more than the proposal");
-        require(proposals[unlocker[msg.sender]].status == Status.ReadyToUnlock , "Status is not ready to be Unlocked");
+        require(proposals[unlocker[msg.sender]].status == Status.Approved , "Status for unlocking is not approved");
 
         // unlocking or minting
         if(tokenDetails[assetID].wrapped){
@@ -138,7 +159,7 @@ contract Bridge is AccessControl{
             ERC20PresetMinterPauser(token).mint(receiver, amount);
 
         } else {
-            require(IERC20(token).balanceOf(address(this)) >= amount,"The Bridge does not have enough tokes");
+    
             IERC20(token).transfer(receiver, amount);
         }
         // changing status to unlocked
@@ -188,7 +209,6 @@ contract Bridge is AccessControl{
 
     // View functions
 
-
     function checkSavedValues(uint8 assetID, address token) internal view returns(bool) {
 
         for (uint256 i = 0; i < savedIDs.length; i++) {
@@ -197,6 +217,34 @@ contract Bridge is AccessControl{
             }
         }
         return false;
+    }
+
+
+    function getProposalDetails(bytes32 proposalHash) external view returns(uint8, uint256, uint256, address, Status) {
+
+        return (proposals[proposalHash].assetID, proposals[proposalHash].amount, proposals[proposalHash].sourceChain, proposals[proposalHash].executor, proposals[proposalHash].status);
+
+    }
+
+
+    function getApprovedProposals() external view returns(bytes32[] memory) {
+
+        bytes32[] memory approvedProposals = new bytes32[](savedIDs.length);
+
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < savedIDs.length; i++) {
+
+            bytes32 proposalHash = keccak256(abi.encodePacked(savedIDs[i], proposals[unlocker[msg.sender]].executor, proposals[unlocker[msg.sender]].amount, proposals[unlocker[msg.sender]].assetID, proposals[unlocker[msg.sender]].sourceChain));
+
+            if (proposals[proposalHash].status == Status.Approved) {
+
+                approvedProposals[count] = proposalHash;
+                count ++;
+            }
+        }
+
+        return approvedProposals;
     }
 
  

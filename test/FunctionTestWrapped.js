@@ -6,13 +6,16 @@ describe('Functions & Errors', () => {
     let bridge;
     let ERC20PresetMinterPauser;
     let token;
+    let token2;
     let deployer;
     let observerAddresses1;
     let observerAddresses2;
     let observerAddresses3;
     let observerAddresses4;
     let executor;
+    let defender;
     const assetID = 1;
+    const assetID2 = 8;
     const amount = 100;
     const sourceChain = 1;
     const targetChain = 2;
@@ -21,7 +24,7 @@ describe('Functions & Errors', () => {
     before(async () => {
         Bridge = await ethers.getContractFactory('Bridge');
         ERC20PresetMinterPauser = await ethers.getContractFactory('ERC20PresetMinterPauser');
-        [deployer, executor, observerAddresses1, observerAddresses2, observerAddresses3, observerAddresses4] = await ethers.getSigners();
+        [deployer, executor, observerAddresses1, observerAddresses2, observerAddresses3, observerAddresses4, defender] = await ethers.getSigners();
 
         // Deploy Bridge contract
         bridge = await Bridge.deploy();
@@ -29,6 +32,8 @@ describe('Functions & Errors', () => {
         // Deploy ERC20 token, give MINTER_ROLE to bridge contract
         token = await ERC20PresetMinterPauser.deploy('Test Token', 'TTK');
         await token.mint(executor.address, 1000);
+
+        token2 = await ERC20PresetMinterPauser.deploy('Test Token 2', 'TT2');
 
     });
 
@@ -42,10 +47,15 @@ describe('Functions & Errors', () => {
     });
     it('+ setting asset', async () => {
         await bridge.connect(deployer).addAsset(assetID, token.address, true);
+        await bridge.connect(deployer).addAsset(assetID2, token2.address, true);
 
         const assetDetails = await bridge.tokenDetails(assetID);
         expect(assetDetails.token).to.equal(token.address);
         expect(assetDetails.wrapped).to.equal(true);
+
+        const assetDetails2 = await bridge.tokenDetails(assetID2);
+        expect(assetDetails2.token).to.equal(token2.address);
+        expect(assetDetails2.wrapped).to.equal(true);
         
     });
     it('- should revert if the ID or address is already taken', async () => {
@@ -53,7 +63,7 @@ describe('Functions & Errors', () => {
         await expect(bridge.connect(deployer).addAsset(2, token.address, false)).to.be.revertedWith('Token ID or address already set')
     });
 
-    // Adding an observer -----------------------------------------------------------
+    // Adding roles -----------------------------------------------------------
     it('------------------------Roles------------------------', async () => {});
     it('- should revert to set Roles if called by not by deployer', async () => {
         await expect(bridge.connect(executor).grantRole(bridge.OBSERVER_ROLE(), observerAddresses1.address)).to.be.revertedWith('AccessControl: sender must be an admin to grant')
@@ -69,6 +79,10 @@ describe('Functions & Errors', () => {
         expect(await bridge.hasRole(bridge.OBSERVER_ROLE(), observerAddresses2.address)).to.equal(true);
         expect(await bridge.hasRole(bridge.OBSERVER_ROLE(), observerAddresses3.address)).to.equal(true);
         expect(await bridge.hasRole(bridge.OBSERVER_ROLE(), observerAddresses4.address)).to.equal(true);
+    });
+    it('+ setting Role to defender', async () => {
+        await bridge.connect(deployer).grantRole(bridge.DEFENDER_ROLE(), defender.address);
+        expect(await bridge.hasRole(bridge.DEFENDER_ROLE(), defender.address)).to.equal(true);
     });
 
     // Burning tokens -----------------------------------------------------------
@@ -147,6 +161,9 @@ describe('Functions & Errors', () => {
     it('- should revert unlock if the amount is bigger then expected', async () => {
         await expect(bridge.connect(executor).unlock(assetID, 101, executor.address)).to.be.revertedWith('Amount is more than the proposal');
     });
+    it('- should revert unlock if asssetID is different', async () => {
+        await expect(bridge.connect(executor).unlock(assetID2, amount, executor.address)).to.be.revertedWith('Asset ID is not the same as the proposal');
+    });
     it('- should revert unlock if bridge do not have minter role', async () => {
         await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('ERC20PresetMinterPauser: must have minter role to mint');
     });
@@ -159,6 +176,20 @@ describe('Functions & Errors', () => {
         expect(await token.balanceOf(executor.address)).to.equal(1000);
     });
     it('- should revert unlock if status is not ready to be unlocked', async () => {
+        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+    });
+    it('- should revert unlock if defender reject a fake proposal', async () => {
+        const fakeHash = '0xa550239c026596b311b11b350090b97488c297c3803b82ccced6fc3b84584990';
+        await bridge.connect(observerAddresses1).vote(fakeHash, executor.address, amount, assetID, sourceChain);
+        await bridge.connect(observerAddresses2).vote(fakeHash, executor.address, amount, assetID, sourceChain);
+        await bridge.connect(observerAddresses3).vote(fakeHash, executor.address, amount, assetID, sourceChain);
+ 
+        for (let i = 0; i < 50; i++) {
+            await network.provider.send('evm_mine', []);
+        }
+        const fakePropsal = await bridge.approvedProposalsList(1)
+        await bridge.connect(defender).defend(fakePropsal);
+ 
         await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
     });
 });

@@ -15,6 +15,7 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
     let observerAddresses2;
     let observerAddresses3;
     let executor;
+    let defender;
     const assetID = 1;
     const amount = 100;
     const chain1 = 1;
@@ -24,7 +25,7 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
     before(async () => {
         Bridge = await ethers.getContractFactory('Bridge');
         ERC20PresetMinterPauser = await ethers.getContractFactory('ERC20PresetMinterPauser');
-        [deployer, executor, observerAddresses1, observerAddresses2, observerAddresses3] = await ethers.getSigners();
+        [deployer, executor, observerAddresses1, observerAddresses2, observerAddresses3, defender] = await ethers.getSigners();
 
         // Deploy Bridges contracts
         bridge = await Bridge.deploy();
@@ -41,6 +42,7 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
         await bridge3.grantRole(bridge.OBSERVER_ROLE(), observerAddresses1.address);
         await bridge3.grantRole(bridge.OBSERVER_ROLE(), observerAddresses2.address);
         await bridge3.grantRole(bridge.OBSERVER_ROLE(), observerAddresses3.address);
+        await bridge.grantRole(bridge.DEFENDER_ROLE(), defender.address);
 
         // Deploy ERC20 tokens
         token = await ERC20PresetMinterPauser.deploy('Test Token', 'TTK');
@@ -202,6 +204,42 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
         expect(unlockTransaction)
             .to.emit(bridge, 'Unlock')
             .withArgs(assetID, token.address, amount, executor.address, executor.address);
+
+        // check for balance of executor
+        expect(await token3.balanceOf(executor.address)).to.equal(0);
+        expect(await token2.balanceOf(executor.address)).to.equal(0);
+        expect(await token.balanceOf(executor.address)).to.equal(1000);
+
+        // check for balance of bridges
+        expect(await token.balanceOf(bridge.address)).to.equal(0);
+        expect(await token2.balanceOf(bridge2.address)).to.equal(0);
+        expect(await token3.balanceOf(bridge2.address)).to.equal(0);
+
+    });
+    it('defender should reject a proposal if incorrect', async () => {
+
+        const fakeHash = '0xa550239c026596b311b11b350090b97488c297c3803b82ccced6fc3b84584990';
+
+        // Vote for fake transaction
+        await bridge.connect(observerAddresses1).vote(fakeHash, executor.address, amount, assetID, chain3);
+        await bridge.connect(observerAddresses2).vote(fakeHash, executor.address, amount, assetID, chain3);
+        await bridge.connect(observerAddresses3).vote(fakeHash, executor.address, amount, assetID, chain3);
+
+        const fakePropsal = await bridge.approvedProposalsList(1)
+        await bridge.connect(defender).defend(fakePropsal);
+
+
+    });
+
+    it('the user cannot unlock tokens and balances are not chaged after rejection', async () => {
+
+        // Fast forward 50 blocks
+        for (let i = 0; i < 50; i++) {
+            await network.provider.send('evm_mine', []);
+        }
+
+        // Reject unlock function
+        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
 
         // check for balance of executor
         expect(await token3.balanceOf(executor.address)).to.equal(0);

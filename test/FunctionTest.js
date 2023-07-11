@@ -6,13 +6,16 @@ describe('Functions & Errors', () => {
     let bridge;
     let ERC20PresetMinterPauser;
     let token;
+    let token2;
     let deployer;
     let observerAddresses1;
     let observerAddresses2;
     let observerAddresses3;
     let observerAddresses4;
+    let defender;
     let executor;
     const assetID = 1;
+    const assetID2 = 2;
     const amount = 100;
     const sourceChain = 1;
     const targetChain = 2;
@@ -21,7 +24,7 @@ describe('Functions & Errors', () => {
     before(async () => {
         Bridge = await ethers.getContractFactory('Bridge');
         ERC20PresetMinterPauser = await ethers.getContractFactory('ERC20PresetMinterPauser');
-        [deployer, executor, observerAddresses1, observerAddresses2, observerAddresses3, observerAddresses4] = await ethers.getSigners();
+        [deployer, executor, observerAddresses1, observerAddresses2, observerAddresses3, observerAddresses4, defender] = await ethers.getSigners();
 
         // Deploy Bridge contract
         bridge = await Bridge.deploy();
@@ -29,6 +32,8 @@ describe('Functions & Errors', () => {
         // Deploy ERC20 token
         token = await ERC20PresetMinterPauser.deploy('Test Token', 'TTK');
         await token.mint(executor.address, 1000);
+
+        token2 = await ERC20PresetMinterPauser.deploy('Test Token 2', 'TT2');
 
     });
 
@@ -40,20 +45,24 @@ describe('Functions & Errors', () => {
     it('- should revert adding an asset ID is 0', async () => {
         await expect(bridge.connect(deployer).addAsset(0, token.address, false)).to.be.revertedWith('ID cannot be 0')
     });
-    it('+ setting asset', async () => {
+    it('+ setting assets', async () => {
         await bridge.connect(deployer).addAsset(assetID, token.address, false);
+        await bridge.connect(deployer).addAsset(assetID2, token2.address, false);
 
         const assetDetails = await bridge.tokenDetails(assetID);
         expect(assetDetails.token).to.equal(token.address);
         expect(assetDetails.wrapped).to.equal(false);
+
+        const assetDetails2 = await bridge.tokenDetails(assetID2);
+        expect(assetDetails2.token).to.equal(token2.address);
+        expect(assetDetails2.wrapped).to.equal(false);
         
     });
     it('- should revert if the ID or address is already taken', async () => {
         await expect(bridge.connect(deployer).addAsset(assetID, token.address, false)).to.be.revertedWith('Token ID has address already')
-        await expect(bridge.connect(deployer).addAsset(2, token.address, false)).to.be.revertedWith('Token ID or address already set')
     });
 
-    // Adding an observer -----------------------------------------------------------
+    // Adding roles -----------------------------------------------------------
     it('------------------------Roles------------------------', async () => {});
     it('- should revert to set Roles if called by not by deployer', async () => {
         await expect(bridge.connect(executor).grantRole(bridge.OBSERVER_ROLE(), observerAddresses1.address)).to.be.revertedWith('AccessControl: sender must be an admin to grant')
@@ -70,6 +79,10 @@ describe('Functions & Errors', () => {
         expect(await bridge.hasRole(bridge.OBSERVER_ROLE(), observerAddresses3.address)).to.equal(true);
         expect(await bridge.hasRole(bridge.OBSERVER_ROLE(), observerAddresses4.address)).to.equal(true);
     });
+    it('+ setting Role to defender', async () => {
+        await bridge.connect(deployer).grantRole(bridge.DEFENDER_ROLE(), defender.address);
+        expect(await bridge.hasRole(bridge.DEFENDER_ROLE(), defender.address)).to.equal(true);
+    });
 
     // Locking tokens -----------------------------------------------------------
     it('------------------------Locking------------------------', async () => {});
@@ -81,7 +94,7 @@ describe('Functions & Errors', () => {
         await expect(bridge.connect(executor).lock(assetID, 0, targetChain)).to.be.revertedWith('Cannot Lock 0 tokens');
     });
     it('- should revert locking if ID is not set to a token address', async () => {
-        await expect(bridge.connect(executor).lock(2, amount, targetChain)).to.be.revertedWith('Not supported token');
+        await expect(bridge.connect(executor).lock(7, amount, targetChain)).to.be.revertedWith('Not supported token');
     });
     it('+ locking tokens', async () => {
         const lockTransaction = await bridge.connect(executor).lock(assetID, amount, targetChain);
@@ -104,7 +117,7 @@ describe('Functions & Errors', () => {
         await expect (bridge.connect(observerAddresses1).vote(lockTransactionHash, '0x0000000000000000000000000000000000000000', amount, assetID, sourceChain)).to.be.revertedWith('The executor shoud be a valid address');
     });
     it('- should revert if assetID is not set', async () => {
-        await expect (bridge.connect(observerAddresses1).vote(lockTransactionHash, executor.address, amount, 2, sourceChain)).to.be.revertedWith('Not supported token');
+        await expect (bridge.connect(observerAddresses1).vote(lockTransactionHash, executor.address, amount, 7, sourceChain)).to.be.revertedWith('Not supported token');
     });
     it('+ observers 1 votes', async () => {
         await bridge.connect(observerAddresses1).vote(lockTransactionHash, executor.address, amount, assetID, sourceChain);
@@ -135,7 +148,7 @@ describe('Functions & Errors', () => {
         await expect(bridge.connect(executor).unlock(assetID, 0, executor.address)).to.be.revertedWith('Cannot Unlock 0 tokens');
     });
     it('- should revert unlock if assetID is not set', async () => {
-        await expect(bridge.connect(executor).unlock(2, amount, executor.address)).to.be.revertedWith('Not supported token');
+        await expect(bridge.connect(executor).unlock(7, amount, executor.address)).to.be.revertedWith('Not supported token');
     });
     it('- should revert unlock if reciver address is not valid', async () => {
         await expect(bridge.connect(executor).unlock(assetID, amount, "0x0000000000000000000000000000000000000000")).to.be.revertedWith('The receiver shoud be a valid address');
@@ -145,6 +158,9 @@ describe('Functions & Errors', () => {
     });
     it('- should revert unlock if the amount is bigger then expected', async () => {
         await expect(bridge.connect(executor).unlock(assetID, 101, executor.address)).to.be.revertedWith('Amount is more than the proposal');
+    });
+    it('- should revert unlock if asssetID is different', async () => {
+        await expect(bridge.connect(executor).unlock(assetID2, amount, executor.address)).to.be.revertedWith('Asset ID is not the same as the proposal');
     });
     it('+ unlocking tokens', async () => {
         await bridge.connect(executor).unlock(assetID, amount, executor.address)
@@ -166,5 +182,17 @@ describe('Functions & Errors', () => {
             await network.provider.send('evm_mine', []);
         }
         await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('ERC20: transfer amount exceeds balance');
+    });
+    // Defender rejects -----------------------------------------------------------
+    it('- should revert unlock if defender reject the fake proposal', async () => {
+        const fakePropsal = await bridge.approvedProposalsList(1)
+        await bridge.connect(defender).defend(fakePropsal);
+ 
+        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+    });
+    it('- should revert if defender tries to reject same proposal', async () => {
+        const fakePropsal = await bridge.approvedProposalsList(1)
+        await expect (bridge.connect(defender).defend(fakePropsal)).to.be.revertedWith('Transaction status is not Approved');
+ 
     });
 });

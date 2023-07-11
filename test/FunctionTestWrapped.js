@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-describe('Functions & Errors with Wrapped ID', () => {
+describe('Functions & Errors with Wrapped Asset', () => {
     let Bridge;
     let bridge;
     let ERC20PresetMinterPauser;

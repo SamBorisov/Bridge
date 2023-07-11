@@ -145,6 +145,20 @@ The status of a proposal in the Bridge contract can be one of the following:
 - `Unlocked`: The proposal has been apprived and unloked after 50 blocks.
 - `Rejected`: The proposal has been rejected and cannot be executed.
 
+## Testing
+
+```shell
+npx hardhat node
+npx hardhat test
+
+```
+
+The contract have 4 tests to make sure everything is working perfect
+- BridgeSimple.js - goes over one cycle of the fucntion (Happy Path)
+- 3BridgeInstances.js - goes over one all function between 3 bridge contract instances and swaps token (Happy Path)
+- FunctionTest.js - goes over all functions and possible errors with a asset that's not wrapped
+- FunctionTestWrapped.js - goes over all functions and possible errors with a asset that is wrapped
+
 ## Conclusion
 
 The Bridge contract is a powerful tool for transferring assets between different blockchains. It is using observers that vote for approval of trasaction and a defender who has 50 block of execution time to reject a fake trasaction. This makes is decentralized and very secure!

@@ -94,7 +94,7 @@ describe('Bridge Simple Test', () => {
 
     });
 
-    it('defender should reject an incirrect proposal & unlocking is blocked', async () => {
+    it('defender should reject an incorrect proposal & unlocking is blocked', async () => {
 
         const fakeHash = '0xa550239c026596b311b11b350090b97488c297c3803b82ccced6fc3b84584990';
 

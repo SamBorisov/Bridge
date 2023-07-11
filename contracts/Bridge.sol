@@ -50,7 +50,7 @@ contract Bridge is AccessControl{
     // Voting logic & functions
 
     event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint8 assetID, uint256 sourceChain);
-    event Approved(bytes32 indexed proposalHash);
+    event Approved(bytes32 indexed proposalHash , bytes32 indexed transactionHash);
 
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
     mapping(bytes32 => uint8)  public voteCount;
@@ -101,7 +101,7 @@ contract Bridge is AccessControl{
         if (voteCount[proposalHash] >= 3) {
                 proposals[proposalHash].status = Status.Approved;
                 executionBlock = block.number;
-                emit Approved(proposalHash);
+                emit Approved(proposalHash, _transactionHash);
             }
 
         emit Vote(proposalHash, _transactionHash, _executor, _amount, _assetID, _sourceChain);

@@ -87,31 +87,27 @@ contract Bridge is AccessControl{
 
     // Unlocking or Minting tokens
 
-    function unlock(uint16 assetID, uint256 amount, address receiver) external after50Block{
+    function unlock(address receiver) external after50Block{
 
-        address token = tokenDetails[assetID].token;
-
-        require(amount > 0,"Cannot Unlock 0 tokens");
-        require(token != address(0),"Not supported token");
         require(receiver != address(0),"The receiver shoud be a valid address");
-        // checking validations
-        require(voteCount[unlocker[msg.sender]] >= 3, "Executor does not have enough votes");
-        require(amount <= proposals[unlocker[msg.sender]].amount, "Amount is more than the proposal");
-        require(proposals[unlocker[msg.sender]].assetID == assetID, "Asset ID is not the same as the proposal");
-        require(proposals[unlocker[msg.sender]].status == Status.Approved , "Status for unlocking is not approved");
 
-        if(tokenDetails[assetID].wrapped){
+        uint256 _amount = proposals[unlocker[msg.sender][0]].amount;
+        uint16 _assetID = proposals[unlocker[msg.sender][0]].assetID;
+        address token = tokenDetails[_assetID].token;
 
-            ERC20PresetMinterPauser(token).mint(receiver, amount);
+        if(tokenDetails[_assetID].wrapped){
+
+            ERC20PresetMinterPauser(token).mint(receiver, _amount);
 
         } else {
     
-            IERC20(token).transfer(receiver, amount);
+            IERC20(token).transfer(receiver, _amount);
         }
-        // changing status to unlocked
-        proposals[unlocker[msg.sender]].status = Status.Unlocked;
+        // changing status to unlocked & removing the element from the unlokcer array
+        proposals[unlocker[msg.sender][0]].status = Status.Unlocked;
+        removeFirstItem(msg.sender);
 
-        emit Unlock(assetID, address(token), amount, msg.sender, receiver);
+        emit Unlock(_assetID, address(token), _amount, msg.sender, receiver);
 
     }
 
@@ -123,7 +119,7 @@ contract Bridge is AccessControl{
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
     mapping(bytes32 => uint8)  public voteCount;
 
-    // aproved propsals list (can remove this if not needed)
+    // aproved propsals list (can remove this if not needed) for testing
     bytes32[] public approvedProposalsList;
 
     enum Status {
@@ -142,7 +138,7 @@ contract Bridge is AccessControl{
     }
 
     mapping(bytes32 => Proposal) public proposals;
-    mapping(address => bytes32) public unlocker;
+    mapping(address => bytes32[]) public unlocker;
 
     function vote(bytes32 _transactionHash, address _executor, uint256 _amount, uint16 _assetID, uint256 _sourceChain) external {
 
@@ -163,7 +159,7 @@ contract Bridge is AccessControl{
             proposals[proposalHash].assetID = _assetID;
             proposals[proposalHash].amount = _amount;
             proposals[proposalHash].status = Status.Pending;
-            unlocker[_executor] = proposalHash;
+            unlocker[_executor].push(proposalHash);
         }
 
         voteCount[proposalHash] ++;
@@ -190,6 +186,7 @@ contract Bridge is AccessControl{
             require(proposals[proposalHash].status == Status.Approved, "Transaction status is not Approved");
 
             proposals[proposalHash].status = Status.Rejected;
+            removeFirstItem(proposals[proposalHash].executor);
     
             emit Defend(proposalHash, Status.Rejected);
     }
@@ -202,6 +199,17 @@ contract Bridge is AccessControl{
     modifier after50Block() {
         require(block.number >= executionBlock + 50, "50 blocks not passed until last vote");
         _;
+    }
+
+
+    // remove first item from array_______________
+    function removeFirstItem(address _executor) internal {
+        require(unlocker[_executor].length > 0, "Array is empty");
+        
+        for (uint256 i = 0; i < unlocker[_executor].length - 1; i++) {
+            unlocker[_executor][i] = unlocker[_executor][i + 1];
+        }
+        unlocker[_executor].pop();
     }
 
 

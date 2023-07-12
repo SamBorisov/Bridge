@@ -83,7 +83,7 @@ describe('Bridge Simple Test', () => {
         }
 
         // Unlock tokens and emit event
-        const unlockTransaction = await bridge.connect(executor).unlock(assetID, amount, executor.address)
+        const unlockTransaction = await bridge.connect(executor).unlock(executor.address)
 
         expect(unlockTransaction)
             .to.emit(bridge, 'Unlock')
@@ -112,7 +112,7 @@ describe('Bridge Simple Test', () => {
         }
 
         // Reject unlock function
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
 
 
     });

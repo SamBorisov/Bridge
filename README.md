@@ -12,6 +12,8 @@ npx hardhat test
 npx hardhat node
 node scripts/sample-script.js
 npx hardhat help
+npx hardhat deploy-Bridge-testnet
+npx hardhat deploy-TT-testnet
 ```
 
 # Bridge Contract
@@ -70,14 +72,9 @@ event Lock(uint8 indexed assetID, address indexed token, uint256 amount, address
 The `unlock` function in the Bridge contract allows users to unlock tokens on the destination chain. The function takes three parameters: `assetID`, `amount`, and `receiver`.
 
 ```solidity
-function unlock(uint8 assetID, uint256 amount, address receiver) external after50Block;
+function unlock(address receiver) external after50Block;
 ```
-
-The `assetID` parameter is an integer that represents the ID of the asset being unlocked. The `amount` parameter is the number of tokens being unlocked. The `receiver` parameter is the address of the user who will receive the unlocked tokens.
-
-When a user calls the `unlock` function, several checks are performed to ensure that the unlocking process is valid. For example, the function checks that the `amount` parameter is greater than zero, that the `token` associated with the `assetID` is not the zero address, and that the user has enough votes to execute the proposal.
-
-If the unlocking process is valid, the function checks whether the `token` is a wrapped token or not. If the `token` is a wrapped token, the function calls the `mint` function on the token contract to mint the specified number of tokens to the `receiver` address. If the `token` is not a wrapped token, the function calls the `transfer` function on the token contract to transfer the specified number of tokens to the `receiver` address.
+Here we put the parameter of the `receiver`, a valid address that shoud get the tokens.
 
 Finally, the `unlock` function updates the status of the proposal to `Unlocked` and emits an `Unlock` event with information about the unlocked tokens, including the `assetID`, `token` address, `amount`, `user` address, and `receiver` address.
 
@@ -109,6 +106,8 @@ The `vote` function in the Bridge contract allows users to vote on a proposed tr
 When a user calls the `vote` function, several checks are performed to ensure that the proposal is valid. For example, the function checks that the user has not already voted on the proposal, that the user has the `OBSERVER_ROLE`, and that the proposal is still in the `Pending` status.
 
 If the proposal is valid, the user's vote is counted and the `voteCount` mapping is updated. If the proposal has received enough votes, the status of the proposal is changed to `Approved` and the transaction can be executed.
+
+When a trasacion is approved, we push the `proposalID` with the details into `unlocker` mapping, the item is deleted when the person unlock the tokens or if the defender reject the trasaction!
 
 After each vote , a Vote event is emited & after 3 votes an Approved event is emited
 ```solidity

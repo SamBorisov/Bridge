@@ -139,38 +139,26 @@ describe('Functions & Errors', () => {
     // Unlocking tokens -----------------------------------------------------------
     it('------------------------Unlocking------------------------', async () => {});
     it('- should revert unlock if 50 blocks are not mined after votes', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('50 blocks not passed until last vote');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('50 blocks not passed until last vote');
     });
-    it('- should revert if user try to unlock 0 tokens', async () => {
+    it('- should revert unlock if reciver address is not valid', async () => {
         for (let i = 0; i < 50; i++) {
             await network.provider.send('evm_mine', []);
         }
-        await expect(bridge.connect(executor).unlock(assetID, 0, executor.address)).to.be.revertedWith('Cannot Unlock 0 tokens');
-    });
-    it('- should revert unlock if assetID is not set', async () => {
-        await expect(bridge.connect(executor).unlock(7, amount, executor.address)).to.be.revertedWith('Not supported token');
-    });
-    it('- should revert unlock if reciver address is not valid', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, "0x0000000000000000000000000000000000000000")).to.be.revertedWith('The receiver shoud be a valid address');
+        await expect(bridge.connect(executor).unlock("0x0000000000000000000000000000000000000000")).to.be.revertedWith('The receiver shoud be a valid address');
     });
     it('- should revert unlock if the executor do not have enough votes', async () => {
-        await expect(bridge.connect(deployer).unlock(assetID, amount, executor.address)).to.be.revertedWith('Executor does not have enough votes');
-    });
-    it('- should revert unlock if the amount is bigger then expected', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, 101, executor.address)).to.be.revertedWith('Amount is more than the proposal');
-    });
-    it('- should revert unlock if asssetID is different', async () => {
-        await expect(bridge.connect(executor).unlock(assetID2, amount, executor.address)).to.be.revertedWith('Asset ID is not the same as the proposal');
+        await expect(bridge.connect(deployer).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
     });
     it('+ unlocking tokens', async () => {
-        await bridge.connect(executor).unlock(assetID, amount, executor.address)
+        await bridge.connect(executor).unlock(executor.address)
     });
     it('+ balances of bridge & executor shoud be updated after unlocking', async () => {
         expect(await token.balanceOf(bridge.address)).to.equal(0);
         expect(await token.balanceOf(executor.address)).to.equal(1000);
     });
     it('- should revert unlock if status is not ready to be unlocked', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
     });
     it('- should revert unlock with fake votes, if bridge do not have enough tokens', async () => {
         const fakeHash = '0xa550239c026596b311b11b350090b97488c297c3803b82ccced6fc3b84584990';
@@ -181,14 +169,14 @@ describe('Functions & Errors', () => {
         for (let i = 0; i < 50; i++) {
             await network.provider.send('evm_mine', []);
         }
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('ERC20: transfer amount exceeds balance');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('ERC20: transfer amount exceeds balance');
     });
     // Defender rejects -----------------------------------------------------------
     it('- should revert unlock if defender reject the fake proposal', async () => {
         const fakePropsal = await bridge.approvedProposalsList(1)
         await bridge.connect(defender).defend(fakePropsal);
  
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
     });
     it('- should revert if defender tries to reject same proposal', async () => {
         const fakePropsal = await bridge.approvedProposalsList(1)

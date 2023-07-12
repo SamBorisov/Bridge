@@ -140,43 +140,31 @@ describe('Functions & Errors with Wrapped Asset', () => {
     // Minting tokens -----------------------------------------------------------
     it('------------------------Minting------------------------', async () => {});
     it('- should revert unlock if 50 blocks are not mined after votes', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('50 blocks not passed until last vote');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('50 blocks not passed until last vote');
     });
-    it('- should revert if user try to unlock 0 tokens', async () => {
+    it('- should revert unlock if reciver address is not valid', async () => {
         // Fast forward 50 blocks
         for (let i = 0; i < 50; i++) {
             await network.provider.send('evm_mine', []);
         }
-        await expect(bridge.connect(executor).unlock(assetID, 0, executor.address)).to.be.revertedWith('Cannot Unlock 0 tokens');
-    });
-    it('- should revert unlock if assetID is not set', async () => {
-        await expect(bridge.connect(executor).unlock(2, amount, executor.address)).to.be.revertedWith('Not supported token');
-    });
-    it('- should revert unlock if reciver address is not valid', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, "0x0000000000000000000000000000000000000000")).to.be.revertedWith('The receiver shoud be a valid address');
+        await expect(bridge.connect(executor).unlock("0x0000000000000000000000000000000000000000")).to.be.revertedWith('The receiver shoud be a valid address');
     });
     it('- should revert unlock if the executor do not have enough votes', async () => {
-        await expect(bridge.connect(deployer).unlock(assetID, amount, executor.address)).to.be.revertedWith('Executor does not have enough votes');
-    });
-    it('- should revert unlock if the amount is bigger then expected', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, 101, executor.address)).to.be.revertedWith('Amount is more than the proposal');
-    });
-    it('- should revert unlock if asssetID is different', async () => {
-        await expect(bridge.connect(executor).unlock(assetID2, amount, executor.address)).to.be.revertedWith('Asset ID is not the same as the proposal');
+        await expect(bridge.connect(deployer).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
     });
     it('- should revert unlock if bridge do not have minter role', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('ERC20PresetMinterPauser: must have minter role to mint');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('ERC20PresetMinterPauser: must have minter role to mint');
     });
     it('+ unlocking /minting/ tokens ', async () => {
         await token.grantRole(await token.MINTER_ROLE(), bridge.address);
-        await bridge.connect(executor).unlock(assetID, amount, executor.address)
+        await bridge.connect(executor).unlock(executor.address)
     });
     it('+ amount is minted to the executor in his balance', async () => {
         expect(await token.balanceOf(bridge.address)).to.equal(0);
         expect(await token.balanceOf(executor.address)).to.equal(1000);
     });
     it('- should revert unlock if status is not ready to be unlocked', async () => {
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
     });
     it('- should revert unlock if defender reject a fake proposal', async () => {
         const fakeHash = '0xa550239c026596b311b11b350090b97488c297c3803b82ccced6fc3b84584990';
@@ -190,6 +178,6 @@ describe('Functions & Errors with Wrapped Asset', () => {
         const fakePropsal = await bridge.approvedProposalsList(1)
         await bridge.connect(defender).defend(fakePropsal);
  
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
     });
 });

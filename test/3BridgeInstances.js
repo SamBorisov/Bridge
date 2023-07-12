@@ -105,7 +105,7 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
         }
 
         // Unlock tokens and emit event
-        const unlockTransaction = await bridge2.connect(executor).unlock(assetID, amount, executor.address)
+        const unlockTransaction = await bridge2.connect(executor).unlock(executor.address)
 
         expect(unlockTransaction)
             .to.emit(bridge2, 'Unlock')
@@ -146,7 +146,7 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
         }
 
         // Unlock tokens and emit event
-        const unlockTransaction = await bridge3.connect(executor).unlock(assetID, amount, executor.address)
+        const unlockTransaction = await bridge3.connect(executor).unlock(executor.address)
 
         expect(unlockTransaction)
             .to.emit(bridge3, 'Unlock')
@@ -199,7 +199,7 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
         }
 
         // Unlock tokens and emit event
-        const unlockTransaction = await bridge.connect(executor).unlock(assetID, amount, executor.address)
+        const unlockTransaction = await bridge.connect(executor).unlock(executor.address)
 
         expect(unlockTransaction)
             .to.emit(bridge, 'Unlock')
@@ -239,7 +239,7 @@ describe('Bridge Between 3 Chains Full Cycle - Happy Path', () => {
         }
 
         // Reject unlock function
-        await expect(bridge.connect(executor).unlock(assetID, amount, executor.address)).to.be.revertedWith('Status for unlocking is not approved');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('Array accessed at an out-of-bounds or negative index');
 
         // check for balance of executor
         expect(await token3.balanceOf(executor.address)).to.equal(0);

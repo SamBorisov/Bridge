@@ -24,6 +24,13 @@ task("deploy-Bridge-testnet", "Deploys contract on a provided network")
         await deployTestToken(taskArguments);
    
     });
+
+    task("deploy-TT-testnet", "Deploys contract on a provided network")
+    .setAction(async (taskArguments, hre, runSuper) => {
+        const deployTestToken = require("./scripts/deploy-TT");
+        await deployTestToken(taskArguments);
+   
+    });
     
 
     task("deploy-mainnet", "Deploys contract on a provided network")

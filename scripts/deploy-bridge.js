@@ -33,6 +33,9 @@ async function deployBridge() {
     // await bridge.connect(deployer).addAsset(assetID, tokenAddress, isWrapped);
 
     // console.log('Roles and assets set!');
+
+   // //0x09cb36887354115e093cbf841b6bd09623e3dd6a - bridge address on Seplia & Mumbai
+
 }
   
 module.exports = deployBridge;

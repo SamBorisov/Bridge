@@ -54,7 +54,15 @@ module.exports = {
     // localhost: {
     //   url:'http://127.0.0.1:8545/'
     // },
-
+    // sepolia: {
+    //   url: "https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID",
+    //   chainId: 31337,
+    //   accounts: [YOUR_PRIVATE_KEY],
+    // },
+    // mumbai: {
+    //   url: "https://rpc-mumbai.matic.today",
+    //   accounts: [MUMBAI_PRIVATE_KEY],
+    // },
     // ropsten: {
     //   url: "https://ropsten.infura.io/v3/40c2813049e44ec79cb4d7e0d18de173",
     //   accounts: ['']

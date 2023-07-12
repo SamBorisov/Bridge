@@ -34,7 +34,8 @@ async function deployBridge() {
 
     // console.log('Roles and assets set!');
 
-   // //0x09cb36887354115e093cbf841b6bd09623e3dd6a - bridge address on Seplia & Mumbai
+   // //New Sepolia address - 0x4b960477ec52ea813d8a4d48f787b2960b51f613
+   // //New Mombai address - 0x747bbdf33146e3b080f9cfbe474996bf2046c0f7
 
 }
   

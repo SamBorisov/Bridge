@@ -235,6 +235,6 @@ contract Bridge is AccessControl{
             _proposals[i] = userProposals[user][i];
         }
         return _proposals;
-}
- 
+    }
+
 }

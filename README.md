@@ -15,6 +15,9 @@ npx hardhat help
 npx hardhat deploy-Bridge-testnet
 npx hardhat deploy-TT-testnet
 ```
+FrontEnd -
+Observer -
+Defender - [Title](https://github.com/Krumomir/BridgeDefender)
 
 # Bridge Contract
 

@@ -117,6 +117,7 @@ contract Bridge is AccessControl{
     event Approved(bytes32 indexed proposalHash , bytes32 indexed transactionHash);
 
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
+    mapping(address => bytes32[])  public userProposals;            // for each user, list of proposals
     mapping(bytes32 => uint8)  public voteCount;
 
     // aproved propsals list (can remove this if not needed) for testing
@@ -160,6 +161,7 @@ contract Bridge is AccessControl{
             proposals[proposalHash].amount = _amount;
             proposals[proposalHash].status = Status.Pending;
             unlocker[_executor].push(proposalHash);
+            userProposals[_executor].push(proposalHash);
         }
 
         voteCount[proposalHash] ++;
@@ -194,7 +196,7 @@ contract Bridge is AccessControl{
 
     // execute after 50 blocks modifier_______________
 
-    uint256 public executionBlock;
+    uint256 private executionBlock;
 
     modifier after50Block() {
         require(block.number >= executionBlock + 50, "50 blocks not passed until last vote");
@@ -203,6 +205,7 @@ contract Bridge is AccessControl{
 
 
     // remove first item from array_______________
+    
     function removeFirstItem(address _executor) internal {
         require(unlocker[_executor].length > 0, "Array is empty");
         

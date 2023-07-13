@@ -116,5 +116,12 @@ describe('Bridge Simple Test', () => {
 
 
     });
+    it('should retrun proposuals on the users', async () => {
+
+        const propsalsUser = await bridge.connect(executor.address).getUserProposals(executor.address);
+
+        // console.log(propsalsUser);
+
+    });
 
 });

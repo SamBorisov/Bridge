@@ -113,7 +113,7 @@ contract Bridge is AccessControl{
 
     // _______________Voting logic & functions_______________
 
-    event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address executor, uint256 amount, uint16 assetID, uint256 sourceChain);
+    event Vote(bytes32 indexed proposalHash, bytes32 indexed transactionHash, address indexed executor, uint256 amount, uint16 assetID, uint256 sourceChain);
     event Approved(bytes32 indexed proposalHash , bytes32 indexed transactionHash);
 
     mapping(bytes32 => mapping(address => bool))  public hasVoted;
@@ -205,7 +205,7 @@ contract Bridge is AccessControl{
 
 
     // remove first item from array_______________
-    
+
     function removeFirstItem(address _executor) internal {
         require(unlocker[_executor].length > 0, "Array is empty");
         
@@ -227,5 +227,14 @@ contract Bridge is AccessControl{
         }
         return false;
     }
+
+    function getUserProposals(address user) public view returns (bytes32[] memory) {
+        uint256 length = userProposals[user].length;
+        bytes32[] memory _proposals = new bytes32[](length);
+        for (uint256 i = 0; i < length; i++) {
+            _proposals[i] = userProposals[user][i];
+        }
+        return _proposals;
+}
  
 }

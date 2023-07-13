@@ -34,9 +34,6 @@ async function deployBridge() {
 
     // console.log('Roles and assets set!');
 
-   // //New Sepolia address - 0x4b960477ec52ea813d8a4d48f787b2960b51f613
-   // //New Mombai address - 0x747bbdf33146e3b080f9cfbe474996bf2046c0f7
-
 }
   
 module.exports = deployBridge;

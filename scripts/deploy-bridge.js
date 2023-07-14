@@ -34,6 +34,9 @@ async function deployBridge() {
 
     // console.log('Roles and assets set!');
 
+    // // Sepolia - 0x048a1bbcc569dcEbbC1cF3c3D11ef8C791F8Ce32
+    // // Mumbai - 0x7a9d2047A110185111Bc6d5f5Ca5410611C381e1
+
 }
   
 module.exports = deployBridge;

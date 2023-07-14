@@ -120,7 +120,7 @@ describe('Bridge Simple Test', () => {
 
         const propsalsUser = await bridge.connect(executor.address).getUserProposals(executor.address);
 
-        // console.log(propsalsUser);
+        expect(propsalsUser).to.be.an('array').with.lengthOf(2);
 
     });
 

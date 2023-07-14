@@ -58,9 +58,9 @@ contract Bridge is AccessControl{
 
     // _______________Locking and Unlocking_______________
 
-    event Lock(uint16 indexed assetID, address indexed token, uint256 amount, address user, uint256 targetChain);
+    event Lock(uint16 indexed assetID, address indexed token, uint256 amount, address indexed user, uint256 targetChain);
 
-    event Unlock(uint16 indexed assetID, address indexed token, uint256 amount, address user, address receiver);
+    event Unlock(uint16 indexed assetID, address indexed token, uint256 amount, address indexed user, address receiver);
 
 
     // Locking or Burining tokens
@@ -228,7 +228,7 @@ contract Bridge is AccessControl{
         return false;
     }
 
-    function getUserProposals(address user) public view returns (bytes32[] memory) {
+    function getUserProposals(address user) external view returns (bytes32[] memory) {
         uint256 length = userProposals[user].length;
         bytes32[] memory _proposals = new bytes32[](length);
         for (uint256 i = 0; i < length; i++) {

@@ -15,9 +15,9 @@ npx hardhat help
 npx hardhat deploy-Bridge-testnet
 npx hardhat deploy-TT-testnet
 ```
-FrontEnd - [Title](https://github.com/NikiKerezov/react-ts-bridge-frontend)
-Observer - [Title](https://github.com/TechXTT/contract-observer)
-Defender - [Title](https://github.com/Krumomir/BridgeDefender)
+FrontEnd - [Link to Git](https://github.com/NikiKerezov/react-ts-bridge-frontend)
+Observer - [Link to Git](https://github.com/TechXTT/contract-observer)
+Defender - [Link to Git](https://github.com/Krumomir/BridgeDefender)
 
 # Bridge Contract
 

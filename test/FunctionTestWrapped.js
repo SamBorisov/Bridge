@@ -140,7 +140,7 @@ describe('Functions & Errors with Wrapped Asset', () => {
     // Minting tokens -----------------------------------------------------------
     it('------------------------Minting------------------------', async () => {});
     it('- should revert unlock if 50 blocks are not mined after votes', async () => {
-        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('50 blocks not passed until last vote');
+        await expect(bridge.connect(executor).unlock(executor.address)).to.be.revertedWith('Not Enough blocks have passed until last vote');
     });
     it('- should revert unlock if reciver address is not valid', async () => {
         // Fast forward 50 blocks

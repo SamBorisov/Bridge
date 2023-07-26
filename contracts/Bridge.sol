@@ -87,7 +87,7 @@ contract Bridge is AccessControl{
 
     // Unlocking or Minting tokens
 
-    function unlock(address receiver) external after50Block(userProposals[msg.sender][0]){
+    function unlock(address receiver) external afterNBlock(userProposals[msg.sender][0], 50){
 
         require(receiver != address(0),"The receiver shoud be a valid address");
 
@@ -194,13 +194,12 @@ contract Bridge is AccessControl{
     }
 
 
-    // execute after 50 blocks modifier_______________
+    // execute after N blocks modifier_______________
 
-    //uint256 private executionBlock;
     mapping (bytes32 => uint256) private executionBlock;
 
-    modifier after50Block(bytes32 _proposalHash) {
-        require(block.number >= executionBlock[_proposalHash] + 50, "50 blocks not passed until last vote");
+    modifier afterNBlock(bytes32 _proposalHash, uint16 _blocks) {
+        require(block.number >= executionBlock[_proposalHash] + _blocks, "Not Enough blocks have passed until last vote");
         _;
     }
 

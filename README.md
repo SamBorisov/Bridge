@@ -75,7 +75,7 @@ event Lock(uint8 indexed assetID, address indexed token, uint256 amount, address
 The `unlock` function in the Bridge contract allows users to unlock tokens on the destination chain. The function takes three parameters: `assetID`, `amount`, and `receiver`.
 
 ```solidity
-function unlock(address receiver) external after50Block;
+function unlock(address receiver) external afterNBlock(userProposals[msg.sender][0], 50);
 ```
 Here we put the parameter of the `receiver`, a valid address that shoud get the tokens.
 

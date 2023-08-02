@@ -49,11 +49,11 @@ module.exports = {
     // },
 
     // ropsten: {
-    //   url: "https://ropsten.infura.io/v3/40c2813049e44ec79cb4d7e0d18de173",
+    //   url: "https://ropsten.infura.io/v3/" + process.env.ROPSTEN_API_KEY,
     //   accounts: ['']
     //  },
     // rinkeby: {
-    //   url: "https://rinkeby.infura.io/v3/ba900937b83f4883b926713999277b1f",
+    //   url: "https://rinkeby.infura.io/v3/" + process.env.RINKEBY_API_KEY,
     //   accounts: ['']
     // },
     // kovan: {
@@ -64,6 +64,6 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: "CHIRAADNUI814XIT9ST36R63UFNBNDKBDY"
+    apiKey: process.env.ETHERSCAN_API_KEY
   }
 };
